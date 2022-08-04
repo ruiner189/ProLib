@@ -1,4 +1,4 @@
-# Elemental Core
+# ProLib
 This is a library to simplify the creation of mods in Peglin. Feel free to use this in your own mod, or to reference the code.
 
 ## SAVE WARNING
