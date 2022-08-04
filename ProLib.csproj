@@ -13,6 +13,7 @@
     <Reference Include="$(peglin)\BepInEx\core\BepInEx.dll" />
     <Reference Include="$(peglin)\Peglin_Data\Managed\*.dll" Exclude="$(peglin)\Peglin_Data\Managed\Assembly-CSharp.dll" />
     <Reference Include="$(peglin)\Assembly-CSharp.dll" />
+    <EmbeddedResource Include="Resources\*" />
   </ItemGroup>
 
   <Target Name="Copy" AfterTargets="Build">

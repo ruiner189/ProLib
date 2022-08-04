@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
+using System.Reflection;
 
 namespace ProLib.Loaders
 {
@@ -83,6 +84,21 @@ namespace ProLib.Loaders
         {
             List<string[]> terms = TranslateTSVFile(content);
             LoadSource(terms);
+        }
+
+        public void LoadResourceTSV(Assembly assembly, String path)
+        {
+            try
+            {
+                Stream stream = assembly.GetManifestResourceStream(path);
+                StreamReader reader = new StreamReader(stream);
+                LoadTSVSource(reader.ReadToEnd());
+                reader.Dispose();
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError(e.StackTrace);
+            }
         }
 
         public void LoadLocalizationSource(Localization localization)
