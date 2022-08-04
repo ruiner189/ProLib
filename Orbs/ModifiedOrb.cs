@@ -10,7 +10,6 @@ using UnityEngine;
 
 namespace ProLib.Orbs
 {
-
     public abstract class ModifiedOrb
     {
         public static readonly List<ModifiedOrb> AllModifiedOrbs = new List<ModifiedOrb>();

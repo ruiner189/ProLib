@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace ProLib.Attributes
 {
+    [AttributeUsage(AttributeTargets.Method)]
     public class RegisterAttribute : Attribute
     {
         private static bool _registered = false;

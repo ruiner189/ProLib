@@ -1,11 +1,6 @@
-﻿using ProLib.Attributes;
-using HarmonyLib;
-using Relics;
+﻿using Relics;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Emit;
-using UnityEngine;
 
 namespace ProLib.Relics
 {
