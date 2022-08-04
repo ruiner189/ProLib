@@ -10,3 +10,7 @@ This library does affect your save. Please back-up your in-game files before usi
 * Custom Orbs
 * Custom Relics
 * Scene injection
+
+## TODO
+- Add documentation
+- Finish wiki
