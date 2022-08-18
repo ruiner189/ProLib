@@ -9,6 +9,7 @@ using System.Reflection.Emit;
 using ToolBox.Serialization;
 using UnityEngine;
 using UnityEngine.UI;
+using Battle.Attacks;
 
 namespace ProLib.Relics
 {
@@ -178,7 +179,7 @@ namespace ProLib.Relics
 
         private static float GetDamageModifier(Attack attack, int critCount, float damage)
         {
-            foreach (CustomRelic relic in CustomRelicManager.OwnedRelics)
+            foreach (CustomRelic relic in OwnedRelics)
             {
                 damage += relic.DamageModifier(attack, critCount);
             }
@@ -255,11 +256,11 @@ namespace ProLib.Relics
                     {
                         if (RelicCountdownValues.ContainsKey(customRelic))
                         {
-                            RelicRemainingCountdowns[customRelic] = CustomRelicManager.RelicCountdownValues[customRelic];
+                            RelicRemainingCountdowns[customRelic] = RelicCountdownValues[customRelic];
                         }
                         if (RelicUsesPerBattleCounts.ContainsKey(customRelic))
                         {
-                            RelicRemainingUsesPerBattle[customRelic] = CustomRelicManager.RelicUsesPerBattleCounts[customRelic];
+                            RelicRemainingUsesPerBattle[customRelic] = RelicUsesPerBattleCounts[customRelic];
                         }
                         OwnedRelics.Add(customRelic);
                         OrderOfRelicsObtained.Add(customRelic, __instance._orderCounter);
@@ -278,7 +279,7 @@ namespace ProLib.Relics
         {
             private static void Postfix()
             {
-                foreach (KeyValuePair<CustomRelic, int> key in CustomRelicManager.RelicUsesPerBattleCounts)
+                foreach (KeyValuePair<CustomRelic, int> key in RelicUsesPerBattleCounts)
                 {
                     RelicRemainingUsesPerBattle[key.Key] = key.Value;
                     if (OwnedRelics.Contains(key.Key))

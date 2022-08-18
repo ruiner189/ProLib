@@ -1,4 +1,5 @@
-﻿using Cruciball;
+﻿using Battle.Attacks;
+using Cruciball;
 using HarmonyLib;
 using I2.Loc;
 using PeglinUI;
@@ -7,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static BattleController;
 
 namespace ProLib.Orbs
 {
@@ -125,16 +127,15 @@ namespace ProLib.Orbs
     [HarmonyPatch(typeof(BattleController), nameof(BattleController.ShotFired))]
     public static class OnShotFired
     {
-        public static void Prefix(BattleController __instance, int ____battleState, GameObject ____ball)
+        public static void Prefix(BattleController __instance)
         {
-            if (____battleState == 9) return;
-            Attack attack = ____ball.GetComponent<Attack>();
+            if (BattleController._battleState == BattleState.NAVIGATION) return;
+            Attack attack = __instance._activePachinkoBall.GetComponent<Attack>();
             if (attack != null)
             {
                 ModifiedOrb orb = ModifiedOrb.GetOrb(attack.locNameString);
-                if (orb != null) orb.OnShotFired(__instance, ____ball, attack);
+                if (orb != null) orb.OnShotFired(__instance, __instance._activePachinkoBall, attack);
             }
-
         }
     }
 
@@ -142,16 +143,16 @@ namespace ProLib.Orbs
     public static class OnDiscard
     {
         [HarmonyPriority(Priority.LowerThanNormal)]
-        public static void Prefix(BattleController __instance, bool __runOriginal, RelicManager ____relicManager, int ____battleState, GameObject ____ball)
+        public static void Prefix(BattleController __instance, bool __runOriginal)
         {
-            if (____battleState == 9 || !__runOriginal) return;
-            if (____ball != null && ____ball.GetComponent<PachinkoBall>().available && !DeckInfoManager.populatingDisplayOrb && !GameBlockingWindow.windowOpen && __instance.NumShotsDiscarded < __instance.MaxDiscardedShots)
+            if (BattleController._battleState == BattleState.NAVIGATION || !__runOriginal) return;
+            if (__instance._activePachinkoBall != null && __instance._activePachinkoBall.GetComponent<PachinkoBall>().available && !DeckInfoManager.populatingDisplayOrb && !GameBlockingWindow.windowOpen && __instance.NumShotsDiscarded < __instance.MaxDiscardedShots)
             {
-                Attack attack = ____ball.GetComponent<Attack>();
+                Attack attack = __instance._activePachinkoBall.GetComponent<Attack>();
                 if (attack != null)
                 {
                     ModifiedOrb orb = ModifiedOrb.GetOrb(attack.locNameString);
-                    if (orb != null) orb.OnDiscard(____relicManager, __instance, ____ball, attack);
+                    if (orb != null) orb.OnDiscard(__instance._relicManager, __instance, __instance._activePachinkoBall, attack);
                 }
             }
         }
@@ -214,9 +215,9 @@ namespace ProLib.Orbs
     public static class ArmBall
     {
         [HarmonyPriority(Priority.First)]
-        public static void Prefix(GameObject ____ball)
+        public static void Prefix(BattleController __instance)
         {
-            ____ball.SetActive(true);
+            __instance._activePachinkoBall.SetActive(true);
         }
     }
 

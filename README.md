@@ -10,6 +10,9 @@ This library does affect your save. Please back-up your in-game files before usi
 * Custom Relics
 * Scene injection
 
+## Wiki
+Want to make a mod using Prolib? Go to https://github.com/ruiner189/ProLib/wiki for more details!
+
 ## TODO
 - Add documentation
 - Finish wiki

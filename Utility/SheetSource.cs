@@ -52,6 +52,8 @@ namespace ProLib.Utility
             if (ShouldUpdateLocal())
             {
                 String path = GetTranslationFilePath(LocalizationFile);
+                String directory = Path.GetDirectoryName(path);
+                Directory.CreateDirectory(directory);
                 File.WriteAllText(path, CurrentTSVText);
             }
         }

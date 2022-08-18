@@ -21,7 +21,7 @@ namespace ProLib
 
         public const String GUID = "com.ruiner.prolib";
         public const String Name = "ProLib";
-        public const String Version = "1.0.0";
+        public const String Version = "1.0.1";
 
         private Harmony _harmony;
         public static ManualLogSource Log;
