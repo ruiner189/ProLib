@@ -50,8 +50,25 @@ namespace ProLib.Loaders
             LocalizationManager.AddSource(LanguageSource);
         }
 
+        private void LoadResourceSources()
+        {
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (!assembly.IsDynamic)
+                    foreach (String path in assembly.GetManifestResourceNames())
+                    {
+                        if (path.Contains(".Resources.Localization.") && path.EndsWith(".tsv"))
+                        {
+                            LoadResourceTSV(assembly, path);
+                            Plugin.Log.LogMessage($"Loading: {path}");
+                        }
+                    }
+            }
+        }
+
         public void Start()
         {
+            LoadResourceSources();
             RegisterLocalization(this);
         }
 

@@ -11,7 +11,6 @@ using UnityEngine;
 using ProLib.Attributes;
 using I2.Loc;
 using System.IO;
-using System.Reflection;
 
 namespace ProLib
 {
@@ -21,7 +20,7 @@ namespace ProLib
 
         public const String GUID = "com.ruiner.prolib";
         public const String Name = "ProLib";
-        public const String Version = "1.0.1";
+        public const String Version = "1.0.2";
 
         private Harmony _harmony;
         public static ManualLogSource Log;
@@ -56,7 +55,6 @@ namespace ProLib
 
         private static void RegisterLocalization(LanguageLoader loader)
         {
-            loader.LoadResourceTSV(Assembly.GetExecutingAssembly(), "ProLib.Resources.Prolib_Translations.tsv");
             loader.LoadGoogleSheetTSVSource("https://docs.google.com/spreadsheets/d/e/2PACX-1vRe82XVSt8LOUz3XewvAHT5eDDzAqXr5MV0lt3gwvfN_2n9Zxj613jllVPtdPdQweAap2yOSJSgwpPt/pub?gid=1410350919&single=true&output=tsv", "Prolib_Translations.tsv");
             loader.AddLocalizationParam("MOD_AMOUNT", Chainloader.PluginInfos.Count.ToString());
             loader.AddLocalizationParam("PEGLIN_VERSION", Application.version);
@@ -76,7 +74,7 @@ namespace ProLib
             if (__instance.GetComponent<Localize>() == null)
             {
                 Localize localize = __instance.gameObject.AddComponent<Localize>();
-                localize.SetTerm("Menu/ModsLoaded");
+                localize.SetTerm("Menu/ModsLoaded", "Assets/Silver SDF-lfs");
             }
             __instance.transform.position += new Vector3(0, 0.5f, 0);
             TMP_Text text = __instance.GetComponent<TMP_Text>();
