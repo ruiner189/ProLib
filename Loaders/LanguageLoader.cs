@@ -57,10 +57,9 @@ namespace ProLib.Loaders
                 if (!assembly.IsDynamic)
                     foreach (String path in assembly.GetManifestResourceNames())
                     {
-                        if (path.Contains(".Resources.Localization.") && path.EndsWith(".tsv"))
-                        {
+                        if (path.Contains(".Resources.Localization.") && path.EndsWith(".tsv")) { 
+                            Plugin.Log.LogDebug($"Loading: {path}");
                             LoadResourceTSV(assembly, path);
-                            Plugin.Log.LogMessage($"Loading: {path}");
                         }
                     }
             }
