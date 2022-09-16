@@ -17,6 +17,8 @@ namespace ProLib.Relics
         private RelicRarity _rarity = RelicRarity.NONE;
         private bool _isEnabled = true;
         private Type _relicIconType = typeof(RelicIcon);
+        private bool _alwaysUnlocked = false;
+        private bool _includeInCustomLoadout = true;
 
         public CustomRelicBuilder SetName(String name)
         {
@@ -72,6 +74,18 @@ namespace ProLib.Relics
             return this;
         }
 
+        public CustomRelicBuilder IncludeInCustomLoadout(bool include)
+        {
+            _includeInCustomLoadout = include;
+            return this;
+        }
+
+        public CustomRelicBuilder AlwaysUnlocked(bool alwaysUnlocked)
+        {
+            _alwaysUnlocked = alwaysUnlocked;
+            return this;
+        }
+
         public CustomRelicBuilder SetRelicIcon(Type relicIconType)
         {
             if (typeof(RelicIcon).IsAssignableFrom(relicIconType))
@@ -96,6 +110,8 @@ namespace ProLib.Relics
             relic.IsEnabled = _isEnabled;
             relic.CustomRelicIconType = _relicIconType;
             relic.descMod = _altDesc;
+            relic.IncludeInCustomLoadout = _includeInCustomLoadout;
+            relic.AlwaysUnlocked = _alwaysUnlocked;
 
             if (_countdown > 0)
                 CustomRelicManager.AddCountdown(relic, _countdown);

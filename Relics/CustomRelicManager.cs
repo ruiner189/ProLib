@@ -22,6 +22,7 @@ namespace ProLib.Relics
         public static readonly Dictionary<CustomRelic, int> OrderOfRelicsObtained = new Dictionary<CustomRelic, int>();
         public static readonly Dictionary<CustomRelic, RelicIcon> RelicIcons = new Dictionary<CustomRelic, RelicIcon>();
         public static readonly List<CustomRelic> OwnedRelics = new List<CustomRelic>();
+        public static readonly HashSet<String> UnlockedRelics = new HashSet<String>();
 
         public static void AddCountdown(CustomRelic relic, int value)
         {
@@ -252,6 +253,8 @@ namespace ProLib.Relics
             {
                 if (relic is CustomRelic customRelic)
                 {
+                    UnlockedRelics.Add(customRelic.Id);
+
                     if (!OwnedRelics.Contains(customRelic))
                     {
                         if (RelicCountdownValues.ContainsKey(customRelic))

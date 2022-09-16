@@ -1,4 +1,9 @@
-﻿using System.Collections;
+﻿using Battle.Attacks;
+using HarmonyLib;
+using PeglinUI.LoadoutManager;
+using Saving;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -36,9 +41,9 @@ namespace ProLib.Loaders
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            Object[] objects = Resources.FindObjectsOfTypeAll<OrbPool>();
+            _allOrbs = Resources.FindObjectsOfTypeAll<OrbPool>().FirstOrDefault();
 
-            if (objects.Length == 0)
+            if (_allOrbs == null)
             {
                 Plugin.Log.LogWarning("Could not find orb pool to inject custom orbs");
                 return;
@@ -48,7 +53,6 @@ namespace ProLib.Loaders
 
             Register(this);
 
-            _allOrbs = objects[0] as OrbPool;
             _allOrbs.AvailableOrbs = _allOrbs.AvailableOrbs.Union(_orbsToRegister).ToArray();
 
             stopWatch.Stop();
@@ -64,6 +68,26 @@ namespace ProLib.Loaders
                 _orbsToRegister.Add(orb);
             } else {
                 Plugin.Log.LogError("Orb injection is being illegally accessed");
+            }
+        }
+
+        [HarmonyPatch(typeof(PersistentPlayerData), nameof(PersistentPlayerData.InitFromSaveFile))]
+        public static class UnlockOrbs
+        {
+            public static void Postfix(ref PersistentPlayerData __result)
+            {
+                OrbPool pool = Resources.FindObjectsOfTypeAll<OrbPool>().FirstOrDefault();
+                if (pool != null)
+                {
+                    foreach (GameObject obj in pool.AvailableOrbs)
+                    {
+                        Attack attack = obj.GetComponent<Attack>();
+                        HashSet<String> set = new HashSet<String>(__result.UnlockedOrbs);
+                        if (attack != null)
+                            set.Add(attack.locNameString);
+                        __result.UnlockedOrbs = set.ToList();
+                    }
+                }
             }
         }
     }

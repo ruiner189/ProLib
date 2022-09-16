@@ -17,10 +17,9 @@ namespace ProLib
     [BepInPlugin(GUID, Name, Version)]
     public class Plugin : BaseUnityPlugin
     {
-
         public const String GUID = "com.ruiner.prolib";
         public const String Name = "ProLib";
-        public const String Version = "1.0.2";
+        public const String Version = "1.1.0";
 
         private Harmony _harmony;
         public static ManualLogSource Log;
@@ -29,10 +28,14 @@ namespace ProLib
         public static GameObject LibManager;
         public static GameObject CorePrefabHolder;
 
+        private static ConfigEntry<bool> _allItemsUnlocked;
+        public static bool AllItemsUnlocked => _allItemsUnlocked.Value;
+
         private void Awake()
         {
             Log = Logger;
             ConfigFile = Config;
+            LoadConfig();
             CreateDirectory();
 
             _harmony = new Harmony(GUID);
@@ -51,6 +54,11 @@ namespace ProLib
         public static void Register()
         {
             LanguageLoader.RegisterLocalization += new LanguageLoader.LocalizationRegistration(RegisterLocalization);
+        }
+
+        private static void LoadConfig()
+        {
+            _allItemsUnlocked = ConfigFile.Bind<bool>("CustomStart", "AllItemsUnlocked", false, "If Enabled, all items are unlocked in Custom Start");
         }
 
         private static void RegisterLocalization(LanguageLoader loader)

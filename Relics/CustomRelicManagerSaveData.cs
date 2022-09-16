@@ -6,7 +6,7 @@ namespace ProLib.Relics
 {
     public class CustomRelicManagerSaveData : SaveObjectData
     {
-		public const String KEY = "ElementalCore.CustomRelicManager";
+		public const String KEY = "ProLib.CustomRelicManager";
 
 		public override string Name => KEY;
 
@@ -25,52 +25,15 @@ namespace ProLib.Relics
 		[SerializeField]
 		public CustomRelicPoolSaveObject _bossRelicPool;
 
-		public CustomRelicSaveObject[] Relics
-		{
-			get
-			{
-				return _relics;
-			}
-		}
+		public CustomRelicSaveObject[] Relics => _relics;
 
-		public CustomRelicCountdownStatus[] RelicCountdowns
-		{
-			get
-			{
-				return _relicCountdowns;
-			}
-		}
+		public CustomRelicCountdownStatus[] RelicCountdowns => _relicCountdowns;
 
-		public CustomRelicPoolSaveObject CommonRelicPool
-		{
-			get
-			{
-				return _commonRelicPool;
-			}
-		}
+		public CustomRelicPoolSaveObject CommonRelicPool => _commonRelicPool;
 
-		public CustomRelicPoolSaveObject RareRelicPool
-		{
-			get
-			{
-				return _rareRelicPool;
-			}
-		}
+		public CustomRelicPoolSaveObject RareRelicPool => _rareRelicPool;
 
-		public CustomRelicPoolSaveObject BossRelicPool
-		{
-			get
-			{
-				return _bossRelicPool;
-			}
-		}
-
-
-		public CustomRelicManagerSaveData(CustomRelicSaveObject[] relics, CustomRelicCountdownStatus[] relicCountdowns) : base(true)
-        {
-            _relics = relics;
-            _relicCountdowns = relicCountdowns;
-        }
+		public CustomRelicPoolSaveObject BossRelicPool => _bossRelicPool;
 
 		public CustomRelicManagerSaveData(CustomRelicSaveObject[] relics, CustomRelicCountdownStatus[] relicCountdowns, CustomRelicPoolSaveObject commonRelicPool, CustomRelicPoolSaveObject rareRelicPool, CustomRelicPoolSaveObject bossRelicPool) : base(true)
 		{

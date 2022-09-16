@@ -10,6 +10,8 @@ namespace ProLib.Relics
         public string Id;
         public static List<CustomRelic> AllCustomRelics = new List<CustomRelic>();
         public bool IsEnabled = true;
+        public bool AlwaysUnlocked;
+        public bool IncludeInCustomLoadout;
 
 
         private Type _customRelicIconType = typeof(RelicIcon);
