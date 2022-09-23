@@ -76,17 +76,21 @@ namespace ProLib.Loaders
         {
             public static void Postfix(ref PersistentPlayerData __result)
             {
-                OrbPool pool = Resources.FindObjectsOfTypeAll<OrbPool>().FirstOrDefault();
-                if (pool != null)
+                if (Plugin.AllItemsUnlocked)
                 {
-                    foreach (GameObject obj in pool.AvailableOrbs)
+                    OrbPool[] pools = Resources.FindObjectsOfTypeAll<OrbPool>();
+                    foreach (OrbPool pool in pools)
                     {
-                        Attack attack = obj.GetComponent<Attack>();
-                        HashSet<String> set = new HashSet<String>(__result.UnlockedOrbs);
-                        if (attack != null)
-                            set.Add(attack.locNameString);
-                        __result.UnlockedOrbs = set.ToList();
+                        foreach (GameObject obj in pool.AvailableOrbs)
+                        {
+                            Attack attack = obj.GetComponent<Attack>();
+                            HashSet<String> set = new HashSet<String>(__result.UnlockedOrbs);
+                            if (attack != null)
+                                set.Add(attack.locNameString);
+                            __result.UnlockedOrbs = set.ToList();
+                        }
                     }
+
                 }
             }
         }

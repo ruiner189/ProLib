@@ -10,6 +10,7 @@ using ToolBox.Serialization;
 using UnityEngine;
 using UnityEngine.UI;
 using Battle.Attacks;
+using ProLib.Fixes;
 
 namespace ProLib.Relics
 {
@@ -253,6 +254,11 @@ namespace ProLib.Relics
             {
                 if (relic is CustomRelic customRelic)
                 {
+                    if(customRelic == __instance.consolationPrize)
+                    {
+                        TrophyStack(__instance, customRelic);
+                        return;
+                    }
                     UnlockedRelics.Add(customRelic.Id);
 
                     if (!OwnedRelics.Contains(customRelic))
@@ -274,6 +280,25 @@ namespace ProLib.Relics
                         __instance._availableBossRelics.Remove(relic);
                     }
                 }
+            }
+
+            private static void TrophyStack(RelicManager relicManager, CustomRelic trophy)
+            {
+                int stack = RelicRemainingCountdowns.ContainsKey(trophy) ? RelicRemainingCountdowns[trophy] + 1 : 1;
+                RelicRemainingCountdowns[trophy] = stack;
+
+                if (stack == 1)
+                {
+                    OwnedRelics.Add(trophy);
+                    OrderOfRelicsObtained.Add(trophy, relicManager._orderCounter);
+                    relicManager._orderCounter++;
+                    RelicManager.OnRelicAdded(trophy);
+                }
+
+                RelicManager.OnCountdownDecremented(trophy, stack);
+
+
+                
             }
         }
 

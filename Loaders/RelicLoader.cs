@@ -3,6 +3,7 @@ using Relics;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using UnityEngine;
 
 namespace ProLib.Loaders
@@ -14,6 +15,8 @@ namespace ProLib.Loaders
         public static RelicRegister Register = delegate (RelicLoader loader) { };
         public static RelicLoader Instance;
 
+        public RelicManager relicManager;
+
         public void Awake()
         {
             if (Instance == null) Instance = this;
@@ -22,16 +25,17 @@ namespace ProLib.Loaders
 
         public void Start()
         {
-            if (!_relicsRegistered)
-            {
-                RegisterCustomRelics();
-            }
             StartCoroutine(DelayedStart());
         }
 
         public IEnumerator DelayedStart()
         {
             yield return new WaitForEndOfFrame();
+            relicManager = Resources.FindObjectsOfTypeAll<RelicManager>().FirstOrDefault();
+            if (!_relicsRegistered)
+            {
+                RegisterCustomRelics();
+            }
             AddRelicsToPools();
         }
 

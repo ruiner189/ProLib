@@ -11,6 +11,8 @@ using UnityEngine;
 using ProLib.Attributes;
 using I2.Loc;
 using System.IO;
+using ProLib.Relics;
+using Relics;
 
 namespace ProLib
 {
@@ -54,6 +56,7 @@ namespace ProLib
         public static void Register()
         {
             LanguageLoader.RegisterLocalization += new LanguageLoader.LocalizationRegistration(RegisterLocalization);
+            RelicLoader.Register += new RelicLoader.RelicRegister(RelicRegister);
         }
 
         private static void LoadConfig()
@@ -66,6 +69,19 @@ namespace ProLib
             loader.LoadGoogleSheetTSVSource("https://docs.google.com/spreadsheets/d/e/2PACX-1vRe82XVSt8LOUz3XewvAHT5eDDzAqXr5MV0lt3gwvfN_2n9Zxj613jllVPtdPdQweAap2yOSJSgwpPt/pub?gid=1410350919&single=true&output=tsv", "Prolib_Translations.tsv");
             loader.AddLocalizationParam("MOD_AMOUNT", Chainloader.PluginInfos.Count.ToString());
             loader.AddLocalizationParam("PEGLIN_VERSION", Application.version);
+        }
+
+        private static void RelicRegister(RelicLoader loader)
+        {
+            Relic trophy = loader.relicManager.consolationPrize;
+            loader.relicManager.consolationPrize = 
+                new CustomRelicBuilder()
+                .AlwaysUnlocked(false)
+                .IncludeInCustomLoadout(false)
+                .SetName(trophy.locKey)
+                .SetSprite(trophy.sprite)
+                .SetRarity(RelicRarity.UNAVAILABLE)
+                .Build();
         }
 
         private void CreateDirectory()
