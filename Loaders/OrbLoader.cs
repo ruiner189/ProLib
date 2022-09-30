@@ -1,6 +1,7 @@
 ﻿using Battle.Attacks;
 using HarmonyLib;
 using PeglinUI.LoadoutManager;
+using ProLib.Extensions;
 using Saving;
 using System;
 using System.Collections;
@@ -17,6 +18,8 @@ namespace ProLib.Loaders
         public delegate void OrbRegister(OrbLoader loader);
         public static OrbRegister Register = delegate (OrbLoader loader) { };
         public static OrbLoader Instance;
+        public GameObject OrbPrefab;
+        public GameObject ShotPrefab;
 
         public void Awake()
         {
@@ -26,6 +29,7 @@ namespace ProLib.Loaders
 
         public void Start()
         {
+            GetBlankPrefab();
             StartCoroutine(LateStart());
         }
 
@@ -34,6 +38,17 @@ namespace ProLib.Loaders
         {
             yield return new WaitForSeconds(1.0f);
             RegisterOrbs();
+        }
+
+        private void GetBlankPrefab()
+        {
+            OrbPrefab = GameObject.Instantiate(Resources.Load<GameObject>("$Prefabs/Orbs/StoneOrb-Lvl1"));
+            OrbPrefab.transform.SetParent(Plugin.PrefabHolder.transform);
+            OrbPrefab.HideAndDontSave();
+
+            ShotPrefab = GameObject.Instantiate(OrbPrefab.GetComponent<ProjectileAttack>()._shotPrefab);
+            ShotPrefab.transform.SetParent(Plugin.PrefabHolder.transform);
+            ShotPrefab.HideAndDontSave();
         }
 
         private void RegisterOrbs()

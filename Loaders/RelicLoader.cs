@@ -30,13 +30,25 @@ namespace ProLib.Loaders
 
         public IEnumerator DelayedStart()
         {
-            yield return new WaitForEndOfFrame();
-            relicManager = Resources.FindObjectsOfTypeAll<RelicManager>().FirstOrDefault();
-            if (!_relicsRegistered)
-            {
-                RegisterCustomRelics();
+            int attempts = 10;
+            while(relicManager == null && attempts > 0){
+                yield return new WaitForEndOfFrame();
+                attempts--;
+                relicManager = Resources.FindObjectsOfTypeAll<RelicManager>().FirstOrDefault();
             }
-            AddRelicsToPools();
+
+            if(relicManager != null)
+            {
+                if (!_relicsRegistered)
+                {
+                    RegisterCustomRelics();
+                }
+                AddRelicsToPools();
+
+            } else
+            {
+                Plugin.Log.LogWarning("Could not find Relic Manager. Aborting Relic Registration.");
+            }
         }
 
         private void RegisterCustomRelics()

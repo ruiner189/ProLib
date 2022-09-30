@@ -13,6 +13,7 @@ using I2.Loc;
 using System.IO;
 using ProLib.Relics;
 using Relics;
+using ProLib.Extensions;
 
 namespace ProLib
 {
@@ -21,14 +22,14 @@ namespace ProLib
     {
         public const String GUID = "com.ruiner.prolib";
         public const String Name = "ProLib";
-        public const String Version = "1.1.0";
+        public const String Version = "1.1.1";
 
         private Harmony _harmony;
         public static ManualLogSource Log;
         public static ConfigFile ConfigFile;
 
         public static GameObject LibManager;
-        public static GameObject CorePrefabHolder;
+        public static GameObject PrefabHolder;
 
         private static ConfigEntry<bool> _allItemsUnlocked;
         public static bool AllItemsUnlocked => _allItemsUnlocked.Value;
@@ -48,8 +49,13 @@ namespace ProLib
             LibManager.AddComponent<LanguageLoader>();
             LibManager.AddComponent<RelicLoader>();
             LibManager.AddComponent<OrbLoader>();
+
+            PrefabHolder = new GameObject("ProLibPrefabs");
+            PrefabHolder.transform.SetParent(LibManager.transform);
+            PrefabHolder.SetActive(false);
+            
             DontDestroyOnLoad(LibManager);
-            LibManager.hideFlags = HideFlags.HideAndDontSave;
+            LibManager.HideAndDontSave(true);
         }
 
         [Register]

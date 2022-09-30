@@ -10,6 +10,7 @@ namespace ProLib.Orbs
     public abstract class CustomOrb : ModifiedOrb
     {
         public static List<CustomOrb> AllCustomOrbs = new List<CustomOrb>();
+        public Dictionary<int, GameObject> Prefabs = new Dictionary<int, GameObject>();
         public CustomOrb(String orbName) : base(orbName)
         {
             if (IsEnabled())
@@ -24,7 +25,10 @@ namespace ProLib.Orbs
             return AllCustomOrbs.Find(orb => orb.GetName().ToLower() == name.ToLower());
         }
 
-        public abstract GameObject GetPrefab(int level);
+        public virtual GameObject GetPrefab(int level)
+        {
+            return Prefabs[level];
+        }
 
         public abstract void CreatePrefabs();
     }
