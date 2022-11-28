@@ -1,5 +1,6 @@
 ﻿using Battle;
 using HarmonyLib;
+using Map;
 using Worldmap;
 
 namespace ProLib.Fixes

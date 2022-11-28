@@ -21,12 +21,12 @@ namespace ProLib.Attributes
 
             foreach (Type type in types)
             {
-                MethodInfo onSceneLoaded = type.GetMethod("OnSceneLoaded", new Type[] {typeof(String), typeof(bool)});
-                MethodInfo lateOnSceneLoaded = type.GetMethod("LateOnSceneLoaded", new Type[] {typeof(String), typeof(bool)});
-                MethodInfo onSceneUnloaded = type.GetMethod("OnSceneUnloaded", new Type[] {typeof(String)});
-                MethodInfo lateOnSceneUnloaded = type.GetMethod("LateOnSceneUnloaded", new Type[] {typeof(String)});
+                MethodInfo onSceneLoaded = type.GetMethod("OnSceneLoaded", new Type[] { typeof(String), typeof(bool) });
+                MethodInfo lateOnSceneLoaded = type.GetMethod("LateOnSceneLoaded", new Type[] { typeof(String), typeof(bool) });
+                MethodInfo onSceneUnloaded = type.GetMethod("OnSceneUnloaded", new Type[] { typeof(String) });
+                MethodInfo lateOnSceneUnloaded = type.GetMethod("LateOnSceneUnloaded", new Type[] { typeof(String) });
 
-                if(onSceneLoaded != null && onSceneLoaded.IsStatic)
+                if (onSceneLoaded != null && onSceneLoaded.IsStatic)
                 {
                     SceneLoader.OnSceneLoaded += (SceneLoader.SceneLoad)Delegate.CreateDelegate(typeof(SceneLoader.SceneLoad), onSceneLoaded);
                 }
@@ -41,7 +41,7 @@ namespace ProLib.Attributes
                     SceneLoader.OnSceneUnloaded += (SceneLoader.SceneUnload)Delegate.CreateDelegate(typeof(SceneLoader.SceneUnload), onSceneUnloaded);
                 }
 
-                if (lateOnSceneUnloaded != null  && lateOnSceneUnloaded.IsStatic)
+                if (lateOnSceneUnloaded != null && lateOnSceneUnloaded.IsStatic)
                 {
                     SceneLoader.LateOnSceneUnloaded += (SceneLoader.SceneUnload)Delegate.CreateDelegate(typeof(SceneLoader.SceneUnload), lateOnSceneUnloaded);
                 }

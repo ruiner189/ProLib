@@ -60,7 +60,7 @@ namespace ProLib.Utility
 
         private String GetTranslationFilePath(String path)
         {
-            return Path.Combine(Application.persistentDataPath,"ProLib","Localization", path);
+            return Path.Combine(Application.persistentDataPath, "ProLib", "Localization", path);
         }
     }
 }

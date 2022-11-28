@@ -5,9 +5,9 @@ namespace ProLib.Utility
 {
     public class WeightedList<T>
     {
-        private List<WeightedItem<T>> _items = new List<WeightedItem<T>>();
+        private readonly List<WeightedItem<T>> _items = new List<WeightedItem<T>>();
+        private readonly Random _random = new Random();
         private float _totalWeights = 0;
-        private Random _random = new Random();
 
         public void Add(T item, float weight)
         {
@@ -22,7 +22,7 @@ namespace ProLib.Utility
         private void CalculateWeights()
         {
             _totalWeights = 0;
-            foreach(WeightedItem<T> item in _items)
+            foreach (WeightedItem<T> item in _items)
             {
                 item.Sum = _totalWeights;
                 _totalWeights += item.Weight;
@@ -32,10 +32,10 @@ namespace ProLib.Utility
         public T GetRandomItem()
         {
             CalculateWeights();
-            float value = _totalWeights * (float) _random.NextDouble();
-            foreach(WeightedItem<T> item in _items)
+            float value = _totalWeights * (float)_random.NextDouble();
+            foreach (WeightedItem<T> item in _items)
             {
-                if(item.Sum <= value && (item.Sum + item.Weight) > value)
+                if (item.Sum <= value && (item.Sum + item.Weight) > value)
                 {
                     return item.Item;
                 }
@@ -46,7 +46,7 @@ namespace ProLib.Utility
 
         public T this[int i]
         {
-            get {return _items[i].Item;}
+            get { return _items[i].Item; }
         }
     }
 

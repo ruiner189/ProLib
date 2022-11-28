@@ -17,18 +17,19 @@ namespace ProLib.Fixes
 
             if (availableRelics.Count < number)
             {
-                if(availableRelics.Count > 0)
+                if (availableRelics.Count > 0)
                 {
-                    while(availableRelics.Count < number)
+                    while (availableRelics.Count < number)
                     {
                         int r = new Random().Next(0, availableRelics.Count);
                         availableRelics.Add(availableRelics[r]);
                     }
                     __result = availableRelics.ToArray();
                     return false;
-                } else
+                }
+                else
                 {
-                    for(int i = 0; i < number; i++)
+                    for (int i = 0; i < number; i++)
                     {
                         availableRelics.Add(__instance.consolationPrize);
                     }

@@ -38,13 +38,12 @@ namespace ProLib.Orbs
             return this;
         }
 
-
         public GameObject Build()
         {
             GameObject result = GameObject.Instantiate(Prefab);
             result.name = Name;
 
-            if(Sprite != null)
+            if (Sprite != null)
             {
                 result.GetComponent<SpriteRenderer>().sprite = Sprite;
             }

@@ -40,7 +40,7 @@ namespace ProLib.Relics
 
         public CustomRelicBuilder SetRelicEffect(int id)
         {
-            _effect = (RelicEffect) id;
+            _effect = (RelicEffect)id;
             return this;
         }
 

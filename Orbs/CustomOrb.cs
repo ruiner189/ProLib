@@ -10,7 +10,8 @@ namespace ProLib.Orbs
     public abstract class CustomOrb : ModifiedOrb
     {
         public static List<CustomOrb> AllCustomOrbs = new List<CustomOrb>();
-        public Dictionary<int, GameObject> Prefabs = new Dictionary<int, GameObject>();
+        protected readonly Dictionary<int, GameObject> Prefabs = new Dictionary<int, GameObject>();
+
         public CustomOrb(String orbName) : base(orbName)
         {
             if (IsEnabled())
@@ -20,6 +21,12 @@ namespace ProLib.Orbs
             }
         }
 
+        public GameObject this[int i]
+        {
+            get { return Prefabs[i]; }
+            set { Prefabs[i] = value; }
+        }
+
         public static CustomOrb GetCustomOrbByName(String name)
         {
             return AllCustomOrbs.Find(orb => orb.GetName().ToLower() == name.ToLower());
@@ -27,7 +34,7 @@ namespace ProLib.Orbs
 
         public virtual GameObject GetPrefab(int level)
         {
-            return Prefabs[level];
+            return this[level];
         }
 
         public abstract void CreatePrefabs();
@@ -85,14 +92,14 @@ namespace ProLib.Orbs
                 {
                     try
                     {
-                        GameObject gameObject = customOrb.GetPrefab(Int32.Parse(name[1]));
+                        GameObject gameObject = customOrb[Int32.Parse(name[1])];
                         if (gameObject != null)
                         {
                             __result = gameObject;
                             return false;
                         }
                     }
-                    catch (Exception){}
+                    catch (Exception) { }
                     Plugin.Log.LogWarning($"Found custom orb but could not find level {name[1]}!");
                 }
 

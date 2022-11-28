@@ -33,6 +33,8 @@ namespace ProLib.Orbs
         public float DamagePerPeg;
         public float CritDamagePerPeg;
 
+        public PachinkoBall.OrbRarity Rarity = PachinkoBall.OrbRarity.COMMON;
+
         public CustomOrbBuilder()
         {
             Loader = OrbLoader.Instance;
@@ -124,6 +126,12 @@ namespace ProLib.Orbs
             return this;
         }
 
+        public CustomOrbBuilder SetRarity(PachinkoBall.OrbRarity rarity)
+        {
+            Rarity = rarity;
+            return this;
+        }
+
         public CustomOrbBuilder SetSprite(Sprite sprite)
         {
             Sprite = sprite;
@@ -151,7 +159,8 @@ namespace ProLib.Orbs
 
         public CustomOrbBuilder AddToDescription(String desc, int position = -1)
         {
-            if (DescriptionKeys == null || DescriptionKeys.Length == 0) {
+            if (DescriptionKeys == null || DescriptionKeys.Length == 0)
+            {
                 DescriptionKeys = new String[] { desc };
                 return this;
             }
@@ -197,8 +206,6 @@ namespace ProLib.Orbs
             return this;
         }
 
-
-
         public CustomOrbBuilder IncludeInOrbPool(bool include)
         {
             Include = include;
@@ -215,17 +222,23 @@ namespace ProLib.Orbs
 
             GameObject result = GameObject.Instantiate(Prefab);
 
-            if(AttackType != null && typeof(Attack).IsAssignableFrom(AttackType))
+
+
+            if (AttackType != null && typeof(Attack).IsAssignableFrom(AttackType))
             {
-                GameObject.DestroyImmediate(result.GetComponent<Attack>());
-                result.AddComponent(AttackType);
+                Attack currentAttack = result.GetComponent<Attack>();
+                if (currentAttack.GetType() != AttackType)
+                {
+                    GameObject.DestroyImmediate(result.GetComponent<Attack>());
+                    result.AddComponent(AttackType);
+                }
             }
 
             Attack attack = result.GetComponent<Attack>();
 
             attack.Level = Level;
 
-            if(Name != null)
+            if (Name != null)
             {
                 attack.locName = Name.ToLower();
                 attack.locNameString = Name.ToLower();
@@ -237,12 +250,17 @@ namespace ProLib.Orbs
             attack.DamagePerPeg = DamagePerPeg;
             attack.CritDamagePerPeg = CritDamagePerPeg;
 
+            if (attack.locDescStrings != null)
+            {
+                attack.CalcLoc();
+            }
+
             if (attack is ProjectileAttack projectile)
             {
-                if(NormalShotPrefab != null)
+                if (NormalShotPrefab != null)
                     projectile._shotPrefab = NormalShotPrefab;
 
-                if(CriticalShotPrefab != null)
+                if (CriticalShotPrefab != null)
                     projectile._criticalShotPrefab = CriticalShotPrefab;
             }
 
@@ -258,16 +276,20 @@ namespace ProLib.Orbs
             if (Scale)
                 sprite.transform.localScale = SpriteScale;
 
-            if(LocalParams.Count > 0)
+            if (LocalParams.Count > 0)
             {
                 if (result.GetComponent<LocalizationParamsManager>() == null) result.AddComponent<LocalizationParamsManager>();
                 LocalizationParamsManager paramManager = result.GetComponent<LocalizationParamsManager>();
 
-                foreach(KeyValuePair<String,String> pair in LocalParams)
+                foreach (KeyValuePair<String, String> pair in LocalParams)
                 {
                     paramManager.SetParameterValue(pair.Key, pair.Value);
                 }
             }
+
+            PachinkoBall pachinko = result.GetComponent<PachinkoBall>();
+            if (pachinko != null)
+                pachinko.orbRarity = Rarity;
 
             result.transform.SetParent(Plugin.PrefabHolder.transform);
             result.HideAndDontSave();
@@ -285,6 +307,7 @@ namespace ProLib.Orbs
             CustomOrbBuilder builder = new CustomOrbBuilder()
                 .WithPrefab(Prefab)
                 .WithAttack(AttackType)
+                .SetRarity(Rarity)
                 .SetShot(NormalShotPrefab, CriticalShotPrefab)
                 .SetName(Name)
                 .SetDescription(DescriptionKeys)
@@ -304,7 +327,7 @@ namespace ProLib.Orbs
 
             GameObject current = gameObjects[0];
 
-            for(int i = 1; i < gameObjects.Length; i++)
+            for (int i = 1; i < gameObjects.Length; i++)
             {
                 Attack attack = current.GetComponent<Attack>();
                 attack.NextLevelPrefab = gameObjects[i];

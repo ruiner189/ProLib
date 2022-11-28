@@ -46,7 +46,7 @@ namespace ProLib.Utility
 
         public String[] AsTerm()
         {
-            return new string[] {Key, English, Français, Español, Deutsch, Nederlands, Italiano, PortuguêsDoBrasil, Русский, 简体中文, 繁体中文, 日本語, 한국어, Svenska, Polski, Türkçe};
+            return new string[] { Key, English, Français, Español, Deutsch, Nederlands, Italiano, PortuguêsDoBrasil, Русский, 简体中文, 繁体中文, 日本語, 한국어, Svenska, Polski, Türkçe };
         }
     }
 }
