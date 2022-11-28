@@ -31,7 +31,7 @@ namespace ProLib.Loaders
         public const String TextScenario = "TextScenario";
         public const String PegMinigame = "PegMinigame";
 
-        private HashSet<String> _previouslyLoaded = new HashSet<String>();
+        private readonly HashSet<String> _previouslyLoaded = new HashSet<String>();
 
         public static SceneLoader Instance;
 

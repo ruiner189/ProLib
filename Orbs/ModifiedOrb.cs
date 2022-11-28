@@ -62,9 +62,7 @@ namespace ProLib.Orbs
         public virtual void OnDeckShuffle(BattleController battleController, GameObject orb, Attack attack) { }
         public virtual void OnEnemyTurnEnd(BattleController battleController, GameObject orb, Attack attack) { }
         public virtual void OnBattleStart(BattleController battleController, GameObject orb, Attack attack) { }
-
         public virtual void ShotWhileInHolster(RelicManager relicManager, BattleController battleController, GameObject attackingOrb, GameObject heldOrb) { }
-
         public virtual void OnShotFired(BattleController battleController, GameObject orb, Attack attack) { }
         public virtual void ChangeDescription(Attack attack, RelicManager relicManager) { }
         public virtual int GetAttackValue(CruciballManager cruciballManager, Attack attack)
@@ -351,7 +349,7 @@ namespace ProLib.Orbs
     {
         public static void Postfix(BattleController __instance)
         {
-            if(DeckManager.completeDeck != null)
+            if (DeckManager.completeDeck != null)
             {
                 foreach (GameObject orb in DeckManager.completeDeck)
                 {

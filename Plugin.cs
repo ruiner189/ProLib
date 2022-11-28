@@ -22,7 +22,7 @@ namespace ProLib
     {
         public const String GUID = "com.ruiner.prolib";
         public const String Name = "ProLib";
-        public const String Version = "1.1.1";
+        public const String Version = "1.2.0";
 
         private Harmony _harmony;
         public static ManualLogSource Log;
@@ -49,6 +49,7 @@ namespace ProLib
             LibManager.AddComponent<LanguageLoader>();
             LibManager.AddComponent<RelicLoader>();
             LibManager.AddComponent<OrbLoader>();
+            LibManager.AddComponent<PrefabLoader>();
 
             PrefabHolder = new GameObject("ProLibPrefabs");
             PrefabHolder.transform.SetParent(LibManager.transform);

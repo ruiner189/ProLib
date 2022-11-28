@@ -31,21 +31,22 @@ namespace ProLib.Loaders
         public IEnumerator DelayedStart()
         {
             int attempts = 10;
-            while(relicManager == null && attempts > 0){
+            while (relicManager == null && attempts > 0)
+            {
                 yield return new WaitForEndOfFrame();
                 attempts--;
                 relicManager = Resources.FindObjectsOfTypeAll<RelicManager>().FirstOrDefault();
             }
 
-            if(relicManager != null)
+            if (relicManager != null)
             {
                 if (!_relicsRegistered)
                 {
                     RegisterCustomRelics();
                 }
                 AddRelicsToPools();
-
-            } else
+            }
+            else
             {
                 Plugin.Log.LogWarning("Could not find Relic Manager. Aborting Relic Registration.");
             }
@@ -78,7 +79,7 @@ namespace ProLib.Loaders
                 if (pool.name == "GlobalRelics") globalRelics = pool;
             }
 
-            if(globalRelics != null)
+            if (globalRelics != null)
                 foreach (CustomRelic relic in relics)
                 {
                     if (relic.IsEnabled)

@@ -23,7 +23,7 @@ namespace ProLib.Attributes
 
             Plugin.Log.LogMessage($"{methods.Count()} Registers found. Invoking...");
 
-            foreach(MethodInfo method in methods)
+            foreach (MethodInfo method in methods)
             {
                 method.Invoke(null, new Object[] { });
             }

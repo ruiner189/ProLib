@@ -13,7 +13,6 @@ namespace ProLib.Relics
         public bool AlwaysUnlocked;
         public bool IncludeInCustomLoadout;
 
-
         private Type _customRelicIconType = typeof(RelicIcon);
         public Type CustomRelicIconType
         {
@@ -24,7 +23,6 @@ namespace ProLib.Relics
             }
             get { return _customRelicIconType; }
         }
- 
 
         public static CustomRelic GetCustomRelic(string id)
         {
@@ -48,9 +46,9 @@ namespace ProLib.Relics
         public virtual void OnRelicUsed(RelicManager relicManager) { }
         public virtual void OnRelicEnabled(RelicManager relicManager) { }
         public virtual void OnRelicDisabled(RelicManager relicManager) { }
-        public virtual void OnCountdownDecremented(RelicManager relicManager, int remainingCountdown) {}
+        public virtual void HandlePegHit(RelicManager relicManager) { }
+        public virtual void OnCountdownDecremented(RelicManager relicManager, int remainingCountdown) { }
         public virtual void OnArmBallForShot(BattleController battleController) { }
-        public virtual int DamageModifier(Attack attack, int critCount) {  return 0; }
-        public virtual int CritModifier(Attack attack, int critCount) { return 0; }
+        public virtual int DamageModifier(Attack attack, int critCount) { return 0; }
     }
 }

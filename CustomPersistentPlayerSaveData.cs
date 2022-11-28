@@ -17,12 +17,12 @@ namespace ProLib
         public override string Name => KEY;
 
         [SerializeField]
-        private String[] _unlockedRelics;
+        private readonly String[] _unlockedRelics;
 
         public String[] UnlockedRelics => _unlockedRelics;
 
         public CustomPersistentPlayerSaveData(String[] unlockedRelics) : base(false) {
-            _unlockedRelics = UnlockedRelics;
+            _unlockedRelics = unlockedRelics;
         }
 
         [HarmonyPatch(typeof(PersistentPlayerData), nameof(PersistentPlayerData.InitFromSaveFile))]

@@ -8,10 +8,10 @@ namespace ProLib.Fixes
     {
         public static void Postfix(float f, ref int __result)
         {
-            if(__result == int.MinValue && f > 0)
+            if (__result == int.MinValue && f > 0)
             {
                 __result = int.MaxValue;
-            }      
+            }
         }
     }
 }
