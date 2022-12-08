@@ -30,12 +30,12 @@ namespace ProLib
         {
             public static void Postfix()
             {
-                CustomRelicManager.UnlockedRelics.Clear();
+                CustomRelicManager.Instance.UnlockedRelics.Clear();
                 if (DataSerializer.Load<SaveObjectData>(KEY) is CustomPersistentPlayerSaveData data)
                 {
                     if(data.UnlockedRelics != null)
                         foreach (String relicName in data.UnlockedRelics)
-                            CustomRelicManager.UnlockedRelics.Add(relicName);
+                            CustomRelicManager.Instance.UnlockedRelics.Add(relicName);
                 }
             }
         }
@@ -45,7 +45,7 @@ namespace ProLib
         {
             public static void Postfix()
             {
-                new CustomPersistentPlayerSaveData(CustomRelicManager.UnlockedRelics.ToArray()).Save();
+                new CustomPersistentPlayerSaveData(CustomRelicManager.Instance.UnlockedRelics.ToArray()).Save();
             }
         }
 

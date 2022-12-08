@@ -10,7 +10,7 @@ namespace ProLib.Orbs
     public abstract class CustomOrb : ModifiedOrb
     {
         public static List<CustomOrb> AllCustomOrbs = new List<CustomOrb>();
-        protected readonly Dictionary<int, GameObject> Prefabs = new Dictionary<int, GameObject>();
+        protected readonly Dictionary<string, GameObject> Prefabs = new Dictionary<string, GameObject>();
 
         public CustomOrb(String orbName) : base(orbName)
         {
@@ -21,10 +21,16 @@ namespace ProLib.Orbs
             }
         }
 
-        public GameObject this[int i]
+        public GameObject this[string tag]
         {
-            get { return Prefabs[i]; }
-            set { Prefabs[i] = value; }
+            get { return GetPrefab(tag); }
+            set { Prefabs[tag] = value; }
+        }
+
+        public GameObject this[int level]
+        {
+            get { return GetPrefab(level); }
+            set { Prefabs[level.ToString()] = value; }
         }
 
         public static CustomOrb GetCustomOrbByName(String name)
@@ -32,21 +38,17 @@ namespace ProLib.Orbs
             return AllCustomOrbs.Find(orb => orb.GetName().ToLower() == name.ToLower());
         }
 
-        public virtual GameObject GetPrefab(int level)
+        public virtual GameObject GetPrefab(string tag)
         {
-            return this[level];
+            return Prefabs[tag];
+        }
+
+        public GameObject GetPrefab(int level)
+        {
+            return GetPrefab(level.ToString());
         }
 
         public abstract void CreatePrefabs();
-    }
-
-    [HarmonyPatch(typeof(MainMenuRandomOrbDrop), nameof(MainMenuRandomOrbDrop.FirePachinkoBall))]
-    public static class FixMenuDrop
-    {
-        public static void Prefix(PachinkoBall pBall)
-        {
-            pBall.gameObject.SetActive(true);
-        }
     }
 
     [HarmonyPatch(typeof(PachinkoBall), nameof(PachinkoBall.SetTrajectorySimulationRadius))]
@@ -92,7 +94,7 @@ namespace ProLib.Orbs
                 {
                     try
                     {
-                        GameObject gameObject = customOrb[Int32.Parse(name[1])];
+                        GameObject gameObject = customOrb[name[1]];
                         if (gameObject != null)
                         {
                             __result = gameObject;
@@ -100,7 +102,7 @@ namespace ProLib.Orbs
                         }
                     }
                     catch (Exception) { }
-                    Plugin.Log.LogWarning($"Found custom orb but could not find level {name[1]}!");
+                    Plugin.Log.LogWarning($"Found custom orb {customOrb.GetName()} but could not find tag {name[1]}!");
                 }
 
             }

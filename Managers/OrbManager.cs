@@ -10,18 +10,25 @@ using System.Diagnostics;
 using System.Linq;
 using UnityEngine;
 using static PachinkoBall;
+using Random = UnityEngine.Random;
+using Priority = ProLib.Components.Priority;
+using Data.Deck;
+using MoreMountains.Tools;
+using System.Reflection;
+using ProLib.Orbs;
 
-namespace ProLib.Loaders
+namespace ProLib.Managers
 {
-    public class OrbLoader : MonoBehaviour
+    public class OrbManager : MonoBehaviour
     {
         private OrbPool _allOrbs;
         private Dictionary<OrbRarity, OrbPool> _pools = new Dictionary<OrbRarity, OrbPool>();
         private Dictionary<OrbRarity, List<GameObject>> _deckManagerPools = new Dictionary<OrbRarity, List<GameObject>>();
+        private HashSet<Assembly> _assembliesToRegister = new HashSet<Assembly>();
 
-        public delegate void OrbRegister(OrbLoader loader);
-        public static OrbRegister Register = delegate (OrbLoader loader) { };
-        public static OrbLoader Instance;
+        public delegate void OrbRegister(OrbManager loader);
+        public static OrbRegister Register = delegate (OrbManager loader) { };
+        public static OrbManager Instance;
         public GameObject OrbPrefab;
         public GameObject ShotPrefab;
 
@@ -53,7 +60,7 @@ namespace ProLib.Loaders
 
             if (_deckManager != null)
             {
-               RegisterOrbs();
+                RegisterOrbs();
             }
             else
             {
@@ -80,6 +87,7 @@ namespace ProLib.Loaders
 
             _orbsToRegister = new List<GameObject>();
             Register?.Invoke(this);
+            RegisterAssemblies();
 
             _allOrbs.AvailableOrbs = _allOrbs.AvailableOrbs.Union(_orbsToRegister).ToArray();
 
@@ -103,6 +111,22 @@ namespace ProLib.Loaders
             stopWatch.Stop();
             Plugin.Log.LogInfo($"Orbs Registered! Took {stopWatch.ElapsedMilliseconds}ms");
             _orbsToRegister = null;
+        }
+
+        private void RegisterAssemblies()
+        {
+            foreach (Assembly assembly in _assembliesToRegister)
+            {
+                IEnumerable<Type> types = assembly.GetTypes().Where(type => typeof(ModifiedOrb).IsAssignableFrom(type));
+                foreach (Type type in types)
+                {
+                    MethodInfo register = type.GetMethod("Register", AccessTools.all);
+                    if (register != null && register.GetParameters().Length == 0 && register.IsStatic)
+                    {
+                        register.Invoke(null, new object[] { });
+                    }
+                }
+            }
         }
 
         private void GetOrbPools()
@@ -139,6 +163,21 @@ namespace ProLib.Loaders
         }
 
         private List<GameObject> _orbsToRegister;
+
+        /// <summary>Searches the current assembly for the static method Register() with classes that extend ModifiedOrb</summary>
+        /// <remarks>This method can fail to use the correct assembly when being inlined. It calls StackTrace.GetFrame(1) which can point to the wrong method/assembly. If you are unsure or run into problems, use <code>RegisterAll(Assembly.GetExecutingAssembly())</code> instead.</remarks>
+        public void RegisterAll()
+        {
+            MethodBase method = new StackTrace().GetFrame(1).GetMethod();
+            Assembly assembly = method.ReflectedType.Assembly;
+            RegisterAll(assembly);
+        }
+
+        public void RegisterAll(Assembly assembly)
+        {
+            _assembliesToRegister.Add(assembly);
+        }
+
         public void AddOrbToPool(GameObject orb)
         {
             if (_orbsToRegister != null)
@@ -157,32 +196,81 @@ namespace ProLib.Loaders
             _deckManagerPools[rarity] = list;
         }
 
-        [HarmonyPatch(typeof(PersistentPlayerData), nameof(PersistentPlayerData.InitFromSaveFile))]
-        public static class UnlockOrbs
+        public static int GetPriority(GameObject orb)
         {
-            public static void Postfix(ref PersistentPlayerData __result)
+            Priority priority = orb.GetComponent<Priority>();
+            return priority ? priority.Weight : Priority.NORMAL;
+        }
+
+        #region Harmony Patches
+
+        [HarmonyPatch(typeof(PersistentPlayerData), nameof(PersistentPlayerData.InitFromSaveFile))]
+        [HarmonyPostfix]
+        private static void PatchInitSave(ref PersistentPlayerData __result)
+        {
+            if (Plugin.AllItemsUnlocked)
             {
-                if (Plugin.AllItemsUnlocked)
+                OrbPool[] pools = Resources.FindObjectsOfTypeAll<OrbPool>();
+                HashSet<String> set = new HashSet<String>(__result.UnlockedOrbs);
+                foreach (OrbPool pool in pools)
                 {
-                    OrbPool[] pools = Resources.FindObjectsOfTypeAll<OrbPool>();
-                    HashSet<String> set = new HashSet<String>(__result.UnlockedOrbs);
-                    foreach (OrbPool pool in pools)
+                    foreach (GameObject obj in pool.AvailableOrbs)
                     {
-                        foreach (GameObject obj in pool.AvailableOrbs)
-                        {
-                            if (obj == null) continue;
-                            Attack attack = obj.GetComponent<Attack>();
-                            if (attack != null)
-                                set.Add(attack.locNameString);
-                        }
+                        if (obj == null) continue;
+                        Attack attack = obj.GetComponent<Attack>();
+                        if (attack != null)
+                            set.Add(attack.locNameString);
                     }
-                    if (__result.UnlockedOrbs != null)
-                    {
-                        __result.UnlockedOrbs.Clear();
-                        __result.UnlockedOrbs.AddRange(set);
-                    }
+                }
+                if (__result.UnlockedOrbs != null)
+                {
+                    __result.UnlockedOrbs.Clear();
+                    __result.UnlockedOrbs.AddRange(set);
                 }
             }
         }
+
+        [HarmonyPatch(typeof(DeckManager), nameof(DeckManager.ShuffleCompleteDeck))]
+        [HarmonyPrefix]
+        private static bool PatchShuffleDeck(DeckManager __instance, bool fromComplete)
+        {
+            GameObject[] currentDeck = fromComplete ? DeckManager.completeDeck.ToArray() : __instance.battleDeck.ToArray();
+            GameObject[] shuffledDeck = currentDeck
+                .OrderBy(orb => Random.Range(0f, 1f))
+                .OrderBy(orb => -GetPriority(orb)).ToArray();
+
+            __instance.shuffledDeck.Clear();
+            if (fromComplete)
+            {
+                if (__instance.battleDeck == null)
+                {
+                    __instance.battleDeck = new List<GameObject>();
+                }
+                if (__instance.battleDeckOrbContainerInstance == null)
+                {
+                    __instance.battleDeckOrbContainerInstance = UnityEngine.Object.Instantiate<BattleDeckOrbContainer>(__instance.battleDeckOrbContainerPrefab);
+                }
+                Transform transform = __instance.battleDeckOrbContainerInstance.transform;
+                transform.MMDestroyAllChildren();
+                __instance.battleDeck.Clear();
+                foreach (GameObject orb in shuffledDeck)
+                {
+                    GameObject newOrb = UnityEngine.Object.Instantiate<GameObject>(orb, transform);
+                    __instance.battleDeck.Add(newOrb);
+                    __instance.PushOrbToShuffleDeck(newOrb, fromComplete);
+                }
+            }
+            else
+            {
+                foreach (GameObject orb in shuffledDeck)
+                {
+                    __instance.PushOrbToShuffleDeck(orb, fromComplete);
+                }
+            }
+            DeckManager.onDeckShuffled(__instance.shuffledDeck.Count);
+            return false;
+        }
     }
+
+    #endregion
 }

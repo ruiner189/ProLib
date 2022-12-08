@@ -13,6 +13,7 @@ namespace ProLib.Orbs
         public const String Bouldorb = "boulder";
         public const String Bramble = "bramble";
         public const String Bufforb = "buff";
+        public const String BullyBall = "self_damage_boost";
         public const String Concentrication = "special_pegs_orb";
         public const String Critiball = "critiball";
         public const String Daggorb = "dagger";
@@ -20,6 +21,7 @@ namespace ProLib.Orbs
         public const String Doctorb = "heal_orb";
         public const String EchoOrb = "echo_orb";
         public const String Egg = "egg";
+        public const String Electrorbmagnet = "magnet";
         public const String Etherwheel = "refresh_on_exit";
         public const String Extraorbinary = "extra_orbinary";
         public const String FireBall = "fireball";
@@ -34,14 +36,19 @@ namespace ProLib.Orbs
         public const String Necorbmancer = "necorb";
         public const String Ohmygorb = "destroy_peg_orb";
         public const String Orbelisk = "orbelisk";
+        public const String Orblation = "self_damagE_basic";
         public const String Orboros = "orberos";
         public const String Refreshorb = "refreshorb";
+        public const String Restorb = "heal_orb_basic";
         public const String Rubborb = "rubber";
+        public const String ShockOrbsorber = "bomb_buff";
         public const String ShuffleOrb = "shuffle";
         public const String Sphear = "sphear";
         public const String Splatorb = "splatorb";
         public const String StoneOrb = "stone";
         public const String Sworb = "sworb";
+        public const String Terriball = "terriball";
         public const String VampireOrb = "vampire_orb";
+        public const String Worbhammer = "warhammer";
     }
 }

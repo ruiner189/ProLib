@@ -1,7 +1,7 @@
 ﻿using Battle.Attacks;
 using I2.Loc;
 using ProLib.Extensions;
-using ProLib.Loaders;
+using ProLib.Managers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +15,7 @@ namespace ProLib.Orbs
     {
 
         public String Name;
-        public OrbLoader Loader;
+        public OrbManager OrbManager;
         public GameObject Prefab;
         public GameObject NormalShotPrefab;
         public GameObject CriticalShotPrefab;
@@ -27,7 +27,7 @@ namespace ProLib.Orbs
         public String[] DescriptionKeys;
         public Sprite Sprite;
 
-        private bool Scale = false;
+        private bool _scale = false;
         public Vector3 SpriteScale;
 
         public float DamagePerPeg;
@@ -37,10 +37,10 @@ namespace ProLib.Orbs
 
         public CustomOrbBuilder()
         {
-            Loader = OrbLoader.Instance;
-            Prefab = Loader.OrbPrefab;
-            NormalShotPrefab = Loader.ShotPrefab;
-            CriticalShotPrefab = Loader.ShotPrefab;
+            OrbManager = OrbManager.Instance;
+            Prefab = OrbManager.OrbPrefab;
+            NormalShotPrefab = OrbManager.ShotPrefab;
+            CriticalShotPrefab = OrbManager.ShotPrefab;
         }
 
         public CustomOrbBuilder(GameObject prefab) : this()
@@ -140,12 +140,12 @@ namespace ProLib.Orbs
 
         public CustomOrbBuilder SetSpriteScale(Vector3 scale)
         {
-            Scale = true;
+            _scale = true;
             SpriteScale = scale;
             return this;
         }
 
-        public CustomOrbBuilder SetDescription(String[] descriptionKeys)
+        public CustomOrbBuilder SetDescription(params String[] descriptionKeys)
         {
             DescriptionKeys = descriptionKeys;
             return this;
@@ -222,8 +222,6 @@ namespace ProLib.Orbs
 
             GameObject result = GameObject.Instantiate(Prefab);
 
-
-
             if (AttackType != null && typeof(Attack).IsAssignableFrom(AttackType))
             {
                 Attack currentAttack = result.GetComponent<Attack>();
@@ -273,7 +271,7 @@ namespace ProLib.Orbs
                 renderer.sprite = Sprite;
             }
 
-            if (Scale)
+            if (_scale)
                 sprite.transform.localScale = SpriteScale;
 
             if (LocalParams.Count > 0)
@@ -296,7 +294,7 @@ namespace ProLib.Orbs
 
             if (Include)
             {
-                Loader.AddOrbToPool(result);
+                OrbManager.AddOrbToPool(result);
             }
 
             return result;
@@ -316,7 +314,7 @@ namespace ProLib.Orbs
                 .IncludeInOrbPool(Include)
                 .SetSpriteScale(SpriteScale);
 
-            builder.Scale = Scale;
+            builder._scale = _scale;
 
             return builder;
         }

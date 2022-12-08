@@ -1,4 +1,4 @@
-﻿using ProLib.Loaders;
+﻿using ProLib.Managers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,22 +28,22 @@ namespace ProLib.Attributes
 
                 if (onSceneLoaded != null && onSceneLoaded.IsStatic)
                 {
-                    SceneLoader.OnSceneLoaded += (SceneLoader.SceneLoad)Delegate.CreateDelegate(typeof(SceneLoader.SceneLoad), onSceneLoaded);
+                    SceneInfoManager.OnSceneLoaded += (SceneInfoManager.SceneLoad)Delegate.CreateDelegate(typeof(SceneInfoManager.SceneLoad), onSceneLoaded);
                 }
 
                 if (lateOnSceneLoaded != null && lateOnSceneLoaded.IsStatic)
                 {
-                    SceneLoader.LateOnSceneLoaded += (SceneLoader.SceneLoad)Delegate.CreateDelegate(typeof(SceneLoader.SceneLoad), lateOnSceneLoaded);
+                    SceneInfoManager.LateOnSceneLoaded += (SceneInfoManager.SceneLoad)Delegate.CreateDelegate(typeof(SceneInfoManager.SceneLoad), lateOnSceneLoaded);
                 }
 
                 if (onSceneUnloaded != null && onSceneUnloaded.IsStatic)
                 {
-                    SceneLoader.OnSceneUnloaded += (SceneLoader.SceneUnload)Delegate.CreateDelegate(typeof(SceneLoader.SceneUnload), onSceneUnloaded);
+                    SceneInfoManager.OnSceneUnloaded += (SceneInfoManager.SceneUnload)Delegate.CreateDelegate(typeof(SceneInfoManager.SceneUnload), onSceneUnloaded);
                 }
 
                 if (lateOnSceneUnloaded != null && lateOnSceneUnloaded.IsStatic)
                 {
-                    SceneLoader.LateOnSceneUnloaded += (SceneLoader.SceneUnload)Delegate.CreateDelegate(typeof(SceneLoader.SceneUnload), lateOnSceneUnloaded);
+                    SceneInfoManager.LateOnSceneUnloaded += (SceneInfoManager.SceneUnload)Delegate.CreateDelegate(typeof(SceneInfoManager.SceneUnload), lateOnSceneUnloaded);
                 }
                 _registered = true;
             }

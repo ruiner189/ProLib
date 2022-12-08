@@ -2,7 +2,7 @@
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
-using ProLib.Loaders;
+using ProLib.Managers;
 using HarmonyLib;
 using System;
 using TMPro;
@@ -22,7 +22,7 @@ namespace ProLib
     {
         public const String GUID = "com.ruiner.prolib";
         public const String Name = "ProLib";
-        public const String Version = "1.2.0";
+        public const String Version = "1.3.0";
 
         private Harmony _harmony;
         public static ManualLogSource Log;
@@ -45,11 +45,11 @@ namespace ProLib
             _harmony.PatchAll();
 
             LibManager = new GameObject("ProLib");
-            LibManager.AddComponent<SceneLoader>();
-            LibManager.AddComponent<LanguageLoader>();
-            LibManager.AddComponent<RelicLoader>();
-            LibManager.AddComponent<OrbLoader>();
-            LibManager.AddComponent<PrefabLoader>();
+            LibManager.AddComponent<SceneInfoManager>();
+            LibManager.AddComponent<LanguageManager>();
+            LibManager.AddComponent<CustomRelicManager>();
+            LibManager.AddComponent<OrbManager>();
+            LibManager.AddComponent<PrefabManager>();
 
             PrefabHolder = new GameObject("ProLibPrefabs");
             PrefabHolder.transform.SetParent(LibManager.transform);
@@ -62,8 +62,8 @@ namespace ProLib
         [Register]
         public static void Register()
         {
-            LanguageLoader.RegisterLocalization += new LanguageLoader.LocalizationRegistration(RegisterLocalization);
-            RelicLoader.Register += new RelicLoader.RelicRegister(RelicRegister);
+            LanguageManager.RegisterLocalization += new LanguageManager.LocalizationRegistration(RegisterLocalization);
+            CustomRelicManager.Register += new CustomRelicManager.RelicRegister(RelicRegister);
         }
 
         private static void LoadConfig()
@@ -71,17 +71,17 @@ namespace ProLib
             _allItemsUnlocked = ConfigFile.Bind<bool>("CustomStart", "AllItemsUnlocked", false, "If Enabled, all items are unlocked in Custom Start");
         }
 
-        private static void RegisterLocalization(LanguageLoader loader)
+        private static void RegisterLocalization(LanguageManager loader)
         {
             loader.LoadGoogleSheetTSVSource("https://docs.google.com/spreadsheets/d/e/2PACX-1vRe82XVSt8LOUz3XewvAHT5eDDzAqXr5MV0lt3gwvfN_2n9Zxj613jllVPtdPdQweAap2yOSJSgwpPt/pub?gid=1410350919&single=true&output=tsv", "Prolib_Translations.tsv");
             loader.AddLocalizationParam("MOD_AMOUNT", Chainloader.PluginInfos.Count.ToString());
             loader.AddLocalizationParam("PEGLIN_VERSION", Application.version);
         }
 
-        private static void RelicRegister(RelicLoader loader)
+        private static void RelicRegister(CustomRelicManager manager)
         {
-            Relic trophy = loader.relicManager.consolationPrize;
-            loader.relicManager.consolationPrize = 
+            Relic trophy = manager.RelicManager.consolationPrize;
+            manager.RelicManager.consolationPrize = 
                 new CustomRelicBuilder()
                 .AlwaysUnlocked(false)
                 .IncludeInCustomLoadout(false)

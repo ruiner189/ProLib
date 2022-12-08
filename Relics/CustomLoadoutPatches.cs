@@ -22,7 +22,7 @@ namespace ProLib.Relics
                 if (customRelic != null || Plugin.AllItemsUnlocked)
                 {
                     __instance._relic = r;
-                    __instance.isUnlocked = Plugin.AllItemsUnlocked || customRelic.AlwaysUnlocked || CustomRelicManager.UnlockedRelics.Contains(customRelic.Id);
+                    __instance.isUnlocked = Plugin.AllItemsUnlocked || customRelic.AlwaysUnlocked || CustomRelicManager.Instance.UnlockedRelics.Contains(customRelic.Id);
                     __instance.image.sprite = r.sprite;
                     if (__instance.dropShadow != null)
                     {

@@ -14,14 +14,15 @@ using HarmonyLib;
 using System.Text.RegularExpressions;
 using UnityEngine.TextCore;
 
-namespace ProLib.Loaders
+namespace ProLib.Managers
 {
-    public class LanguageLoader : MonoBehaviour, ILocalizationParamsManager
+    [HarmonyPatch]
+    public class LanguageManager : MonoBehaviour, ILocalizationParamsManager
     {
-        public static LanguageLoader Instance { get; private set; }
+        public static LanguageManager Instance { get; private set; }
 
-        public delegate void LocalizationRegistration(LanguageLoader loader);
-        public static LocalizationRegistration RegisterLocalization = delegate (LanguageLoader loader) { };
+        public delegate void LocalizationRegistration(LanguageManager loader);
+        public static LocalizationRegistration RegisterLocalization = delegate (LanguageManager loader) { };
 
         private readonly Dictionary<string, string> _parameters = new Dictionary<string, string>();
         private readonly List<Func<string, string>> _dynamicParameters = new List<Func<string, string>>();
@@ -276,32 +277,30 @@ namespace ProLib.Loaders
         }
 
         [HarmonyPatch(typeof(TooltipKeywordDescriptions), nameof(TooltipKeywordDescriptions.UpdateString))]
-        private static class CustomSecondaryTerms
+        [HarmonyPostfix]
+        private static void PatchUpdateString(TooltipKeywordDescriptions __instance, String englishDesc, ref int __result)
         {
-            private static void Postfix(TooltipKeywordDescriptions __instance, String englishDesc, ref int __result)
+            Regex regex = new Regex(__instance.keywordRegexPattern, RegexOptions.IgnoreCase);
+            List<string> list = new List<string>();
+            Match match = regex.Match(englishDesc);
+            while (match.Success)
             {
-                Regex regex = new Regex(__instance.keywordRegexPattern, RegexOptions.IgnoreCase);
-                List<string> list = new List<string>();
-                Match match = regex.Match(englishDesc);
-                while (match.Success)
+                Group group = match.Groups[1];
+                foreach (KeywordDescriptionPair keywordDescriptionPair in Instance._keywordDescriptionPairs)
                 {
-                    Group group = match.Groups[1];
-                    foreach (KeywordDescriptionPair keywordDescriptionPair in Instance._keywordDescriptionPairs)
+                    if (group.Captures[0].ToString() == keywordDescriptionPair.Keyword && !list.Contains(keywordDescriptionPair.DescriptionLoc))
                     {
-                        if (group.Captures[0].ToString() == keywordDescriptionPair.Keyword && !list.Contains(keywordDescriptionPair.DescriptionLoc))
-                        {
-                            list.Add(keywordDescriptionPair.DescriptionLoc);
-                        }
+                        list.Add(keywordDescriptionPair.DescriptionLoc);
                     }
-                    match = match.NextMatch();
                 }
-                bool flag = __instance.GetComponentInParent<Canvas>().renderMode != RenderMode.WorldSpace;
-                foreach (string str in list)
-                {
-                    (flag ? UnityEngine.Object.Instantiate<GameObject>(__instance._keywordDescriptionPrefabScreenSpace, __instance.transform) : UnityEngine.Object.Instantiate<GameObject>(__instance._keywordDescriptionPrefab, __instance.transform)).GetComponentInChildren<Localize>().Term = "Statuses/" + str;
-                }
-                __result += list.Count;
+                match = match.NextMatch();
             }
+            bool flag = __instance.GetComponentInParent<Canvas>().renderMode != RenderMode.WorldSpace;
+            foreach (string str in list)
+            {
+                (flag ? UnityEngine.Object.Instantiate<GameObject>(__instance._keywordDescriptionPrefabScreenSpace, __instance.transform) : UnityEngine.Object.Instantiate<GameObject>(__instance._keywordDescriptionPrefab, __instance.transform)).GetComponentInChildren<Localize>().Term = "Statuses/" + str;
+            }
+            __result += list.Count;
         }
     }
 }

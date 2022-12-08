@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace ProLib.Loaders
+namespace ProLib.Managers
 {
-    public class SceneLoader : MonoBehaviour
+    public class SceneInfoManager : MonoBehaviour
     {
         public delegate void SceneLoad(String sceneName, bool firstLoad);
         public delegate void SceneUnload(String sceneName);
@@ -30,10 +30,12 @@ namespace ProLib.Loaders
         public const String Treasure = "Treasure";
         public const String TextScenario = "TextScenario";
         public const String PegMinigame = "PegMinigame";
+        public const String ShopScenario = "ShopScenario";
+        public const String RunSummary = "RunSummary";
 
         private readonly HashSet<String> _previouslyLoaded = new HashSet<String>();
 
-        public static SceneLoader Instance;
+        public static SceneInfoManager Instance;
 
         public void Awake()
         {

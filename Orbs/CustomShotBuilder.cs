@@ -1,5 +1,5 @@
 ﻿using ProLib.Extensions;
-using ProLib.Loaders;
+using ProLib.Managers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +17,7 @@ namespace ProLib.Orbs
 
         public CustomShotBuilder()
         {
-            Prefab = OrbLoader.Instance.ShotPrefab;
+            Prefab = OrbManager.Instance.ShotPrefab;
         }
 
         public CustomShotBuilder SetSprite(Sprite sprite)

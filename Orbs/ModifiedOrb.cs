@@ -12,6 +12,7 @@ using static BattleController;
 
 namespace ProLib.Orbs
 {
+    [HarmonyPatch]
     public abstract class ModifiedOrb
     {
         public static readonly List<ModifiedOrb> AllModifiedOrbs = new List<ModifiedOrb>();
@@ -36,19 +37,23 @@ namespace ProLib.Orbs
         public abstract bool IsEnabled();
 
         /// <summary>
-        /// Gets a modification
+        /// Gets all modifications for an orb.
         /// </summary>
         /// <param name="name"></param> The name of the orb being modified
         /// <param name="includeAll"></param> Include disabled modifications
-        /// <returns></returns>
-        public static ModifiedOrb GetOrb(String name, bool includeAll = false)
+        /// <returns>A list of all the modifications</returns>
+        public static List<ModifiedOrb> GetOrbs(String name, bool includeAll = false)
         {
             if (includeAll)
-                return AllModifiedOrbs.Find(orb => orb.GetName() == name);
+                return AllModifiedOrbs.FindAll(orb => orb.GetName() == name);
             else
-                return AllModifiedOrbs.Find(orb => orb.GetName() == name && orb.IsEnabled());
+                return AllModifiedOrbs.FindAll(orb => orb.GetName() == name && orb.IsEnabled());
         }
 
+        /// <summary>
+        /// Gets the name of the orb
+        /// </summary>
+        /// <returns>The name of the orb</returns>
         public String GetName()
         {
             return _name;
@@ -63,6 +68,7 @@ namespace ProLib.Orbs
         public virtual void OnEnemyTurnEnd(BattleController battleController, GameObject orb, Attack attack) { }
         public virtual void OnBattleStart(BattleController battleController, GameObject orb, Attack attack) { }
         public virtual void ShotWhileInHolster(RelicManager relicManager, BattleController battleController, GameObject attackingOrb, GameObject heldOrb) { }
+        public virtual void OnDrawnFromDeck(BattleController battleController, GameObject orb, Attack attack) { }
         public virtual void OnShotFired(BattleController battleController, GameObject orb, Attack attack) { }
         public virtual void ChangeDescription(Attack attack, RelicManager relicManager) { }
         public virtual int GetAttackValue(CruciballManager cruciballManager, Attack attack)
@@ -120,28 +126,28 @@ namespace ProLib.Orbs
         {
             attack.locDescStrings = desc;
         }
-    }
 
-    [HarmonyPatch(typeof(BattleController), nameof(BattleController.ShotFired))]
-    public static class OnShotFired
-    {
-        public static void Prefix(BattleController __instance)
+        #region Harmony Patches
+
+        [HarmonyPatch(typeof(BattleController), nameof(BattleController.ShotFired))]
+        [HarmonyPostfix]
+        private static void PatchShotFired(BattleController __instance)
         {
             if (BattleController._battleState == BattleState.NAVIGATION) return;
             Attack attack = __instance._activePachinkoBall.GetComponent<Attack>();
             if (attack != null)
             {
-                ModifiedOrb orb = ModifiedOrb.GetOrb(attack.locNameString);
-                if (orb != null) orb.OnShotFired(__instance, __instance._activePachinkoBall, attack);
+                List<ModifiedOrb> orbs = GetOrbs(attack.locNameString);
+                foreach(ModifiedOrb orb in orbs)
+                {
+                   orb.OnShotFired(__instance, __instance._activePachinkoBall, attack);
+                }
             }
         }
-    }
 
-    [HarmonyPatch(typeof(BattleController), nameof(BattleController.AttemptOrbDiscard))]
-    public static class OnDiscard
-    {
-        [HarmonyPriority(Priority.LowerThanNormal)]
-        public static void Prefix(BattleController __instance, bool __runOriginal)
+        [HarmonyPatch(typeof(BattleController), nameof(BattleController.AttemptOrbDiscard))]
+        [HarmonyPrefix]
+        private static void PatchAttemptOrbDiscard(BattleController __instance, bool __runOriginal)
         {
             if (BattleController._battleState == BattleState.NAVIGATION || !__runOriginal) return;
             if (__instance._activePachinkoBall != null && __instance._activePachinkoBall.GetComponent<PachinkoBall>().available && !DeckInfoManager.populatingDisplayOrb && !GameBlockingWindow.windowOpen && __instance.NumShotsDiscarded < __instance.MaxDiscardedShots)
@@ -149,42 +155,43 @@ namespace ProLib.Orbs
                 Attack attack = __instance._activePachinkoBall.GetComponent<Attack>();
                 if (attack != null)
                 {
-                    ModifiedOrb orb = ModifiedOrb.GetOrb(attack.locNameString);
-                    if (orb != null) orb.OnDiscard(__instance._relicManager, __instance, __instance._activePachinkoBall, attack);
+                    List<ModifiedOrb> orbs = GetOrbs(attack.locNameString);
+                    foreach (ModifiedOrb orb in orbs)
+                    {
+                        orb.OnDiscard(__instance._relicManager, __instance, __instance._activePachinkoBall, attack);
+                    }
                 }
             }
         }
-    }
 
-    [HarmonyPatch(typeof(Attack), nameof(Attack.Description), MethodType.Getter)]
-    public static class ChangeDescription
-    {
-
-        public static bool Prefix(Attack __instance, RelicManager ____relicManager)
+        [HarmonyPatch(typeof(Attack), nameof(Attack.Description), MethodType.Getter)]
+        [HarmonyPrefix]
+        private static bool PatchDescription(Attack __instance)
         {
-            ModifiedOrb orb = ModifiedOrb.GetOrb(__instance.locNameString);
+            if (__instance._relicManager == null) return true;
 
-            if (orb == null || ____relicManager == null) return true;
-
-            orb.ChangeDescription(__instance, ____relicManager);
-            if (orb.LocalVariables)
+            List<ModifiedOrb> orbs = GetOrbs(__instance.locNameString);
+            foreach (ModifiedOrb orb in orbs)
             {
-                LocalizationParamsManager localParams = __instance.GetComponent<LocalizationParamsManager>();
-                if (localParams == null) localParams = __instance.gameObject.AddComponent<LocalizationParamsManager>();
-                if (localParams != null)
-                    orb.SetLocalVariables(localParams, __instance.gameObject, __instance);
+                orb.ChangeDescription(__instance, __instance._relicManager);
+                if (orb.LocalVariables)
+                {
+                    LocalizationParamsManager localParams = __instance.GetComponent<LocalizationParamsManager>();
+                    if (localParams == null) localParams = __instance.gameObject.AddComponent<LocalizationParamsManager>();
+                    if (localParams != null)
+                        orb.SetLocalVariables(localParams, __instance.gameObject, __instance);
+                }
             }
+
             return true;
         }
-    }
 
-    [HarmonyPatch(typeof(Attack), nameof(Attack.SoftInit))]
-    public static class AttackInit
-    {
-        public static void Postfix(Attack __instance, CruciballManager ____cruciballManager)
+        [HarmonyPatch(typeof(Attack), nameof(Attack.SoftInit))]
+        [HarmonyPostfix]
+        private static void PatchSoftInit(Attack __instance, CruciballManager ____cruciballManager)
         {
-            ModifiedOrb orb = ModifiedOrb.GetOrb(__instance.locNameString);
-            if (orb != null)
+            List<ModifiedOrb> orbs = GetOrbs(__instance.locNameString);
+            foreach (ModifiedOrb orb in orbs)
             {
                 int damage = orb.GetAttackValue(____cruciballManager, __instance);
                 if (damage != int.MinValue)
@@ -195,92 +202,73 @@ namespace ProLib.Orbs
             }
         }
 
-    }
-
-    [HarmonyPatch(typeof(Attack), nameof(Attack.SetId))]
-    public static class FixMirrorOrb
-    {
-        public static void Postfix(Attack __instance)
+        [HarmonyPatch(typeof(Attack), nameof(Attack.SetId))]
+        [HarmonyPostfix]
+        private static void PatchFixMirrorOrb(Attack __instance)
         {
             DeckManager deckManager = Resources.FindObjectsOfTypeAll<DeckManager>().FirstOrDefault();
             RelicManager relicManager = Resources.FindObjectsOfTypeAll<RelicManager>().FirstOrDefault();
             CruciballManager cruciballManager = Resources.FindObjectsOfTypeAll<CruciballManager>().FirstOrDefault();
             __instance.SoftInit(deckManager, relicManager, cruciballManager);
         }
-    }
 
-    [HarmonyPatch(typeof(BattleController), nameof(BattleController.ArmBallForShot))]
-    public static class ArmBall
-    {
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix(BattleController __instance)
-        {
-            __instance._activePachinkoBall.SetActive(true);
-        }
-    }
-
-    [HarmonyPatch(typeof(DeckManager), nameof(DeckManager.AddOrbToDeck))]
-    [HarmonyPatch(typeof(DeckManager), nameof(DeckManager.AddOrbToDeckSilent))]
-    public static class AddOrb
-    {
-        public static void Postfix(DeckManager __instance, GameObject orbPrefab)
+        [HarmonyPatch(typeof(DeckManager), nameof(DeckManager.AddOrbToDeck))]
+        [HarmonyPatch(typeof(DeckManager), nameof(DeckManager.AddOrbToDeckSilent))]
+        [HarmonyPostfix]
+        private static void PatchAddOrbToDeck(DeckManager __instance, GameObject orbPrefab)
         {
             Attack attack = orbPrefab.GetComponent<Attack>();
             if (attack != null)
             {
-                ModifiedOrb orb = ModifiedOrb.GetOrb(attack.locNameString);
-                if (orb != null)
+                List<ModifiedOrb> orbs = GetOrbs(attack.locNameString);
+                foreach (ModifiedOrb orb in orbs)
                 {
                     orb.OnAddedToDeck(__instance, attack._cruciballManager, orbPrefab, attack);
                 }
             }
         }
-    }
 
-    [HarmonyPatch(typeof(DeckManager), nameof(DeckManager.RemoveOrbFromBattleDeck))]
-    public static class RemoveOrbFromBattleDeck
-    {
-        public static void Postfix(DeckManager __instance, GameObject orb)
+        [HarmonyPatch(typeof(DeckManager), nameof(DeckManager.RemoveOrbFromBattleDeck))]
+        [HarmonyPostfix]
+        private static void PatchRemoveOrbFromBattleDeck(DeckManager __instance, GameObject orb)
         {
             Attack attack = orb.GetComponent<Attack>();
             if (attack != null)
             {
-                ModifiedOrb modifiedOrb = ModifiedOrb.GetOrb(attack.locNameString);
-                if (modifiedOrb != null)
+                List<ModifiedOrb> orbs = GetOrbs(attack.locNameString);
+                foreach (ModifiedOrb modifiedOrb in orbs)
                 {
                     modifiedOrb.OnRemovedFromBattleDeck(__instance, attack._cruciballManager, orb, attack);
                 }
             }
         }
-    }
 
-    [HarmonyPatch(typeof(DeckManager), nameof(DeckManager.RemoveSpecifiedOrbFromDeck))]
-    [HarmonyPatch(typeof(DeckManager), nameof(DeckManager.SoftRemoveSpecifiedOrbFromDeck))]
-    public static class RemoveOrbFromDeck
-    {
-        public static void Postfix(DeckManager __instance, GameObject orb)
+        [HarmonyPatch(typeof(DeckManager), nameof(DeckManager.RemoveSpecifiedOrbFromDeck))]
+        [HarmonyPatch(typeof(DeckManager), nameof(DeckManager.SoftRemoveSpecifiedOrbFromDeck))]
+        [HarmonyPostfix]
+        private static void PatchRemoveOrbFromDeck(DeckManager __instance, GameObject orb)
         {
             Attack attack = orb.GetComponent<Attack>();
             if (attack != null)
             {
-                ModifiedOrb modifiedOrb = ModifiedOrb.GetOrb(attack.locNameString);
-                if (orb != null)
+                List<ModifiedOrb> orbs = GetOrbs(attack.locNameString);
+                foreach (ModifiedOrb modifiedOrb in orbs)
                 {
                     modifiedOrb.OnRemovedFromDeck(__instance, orb, attack);
                 }
             }
         }
-    }
 
-    [HarmonyPatch(typeof(DeckManager), nameof(DeckManager.RemoveRandomOrbFromDeck))]
-    public static class RemoveRandomOrbFromDeck
-    {
-        public static void Prefix(out List<GameObject> __state)
+        [HarmonyPatch(typeof(DeckManager), nameof(DeckManager.RemoveRandomOrbFromDeck))]
+        [HarmonyPrefix]
+        private static void PatchPreRemoveRandomOrbFromDeck(ref List<GameObject> __state)
         {
             __state = new List<GameObject>(DeckManager.completeDeck);
         }
 
-        public static void Postfix(DeckManager __instance, List<GameObject> __state)
+        [HarmonyPatch(typeof(DeckManager), nameof(DeckManager.RemoveRandomOrbFromDeck))]
+        [HarmonyPostfix]
+        private static void PatchPostRemoveRandomOrbFromDeck(DeckManager __instance, List<GameObject> __state)
         {
             if (__state == null || DeckManager.completeDeck == null) return;
             foreach (GameObject orb in DeckManager.completeDeck)
@@ -293,20 +281,19 @@ namespace ProLib.Orbs
                 Attack attack = orb.GetComponent<Attack>();
                 if (attack != null)
                 {
-                    ModifiedOrb modifiedOrb = ModifiedOrb.GetOrb(attack.locNameString);
-                    if (modifiedOrb != null)
+                    List<ModifiedOrb> orbs = GetOrbs(attack.locNameString);
+                    foreach (ModifiedOrb modifiedOrb in orbs)
                     {
                         modifiedOrb.OnRemovedFromDeck(__instance, orb, attack);
+
                     }
                 }
             }
         }
-    }
 
-    [HarmonyPatch(typeof(BattleController), nameof(BattleController.ShuffleDeck))]
-    public static class DeckShuffle
-    {
-        public static void Postfix(BattleController __instance)
+        [HarmonyPatch(typeof(BattleController), nameof(BattleController.ShuffleDeck))]
+        [HarmonyPostfix]
+        private static void PatchShuffleDeck(BattleController __instance)
         {
 
             foreach (GameObject orb in DeckManager.completeDeck)
@@ -314,40 +301,37 @@ namespace ProLib.Orbs
                 Attack attack = orb.GetComponent<Attack>();
                 if (attack != null)
                 {
-                    ModifiedOrb modifiedOrb = ModifiedOrb.GetOrb(attack.locNameString);
-                    if (modifiedOrb != null)
+                    List<ModifiedOrb> orbs = GetOrbs(attack.locNameString);
+                    foreach (ModifiedOrb modifiedOrb in orbs)
                     {
                         modifiedOrb.OnDeckShuffle(__instance, orb, attack);
                     }
                 }
             }
         }
-    }
 
-    [HarmonyPatch(typeof(BattleController), nameof(BattleController.EnemyTurnComplete))]
-    public static class EnemyTurnEnd
-    {
-        public static void Postfix(BattleController __instance)
+        [HarmonyPatch(typeof(BattleController), nameof(BattleController.EnemyTurnComplete))]
+        [HarmonyPostfix]
+        private static void PatchEnemyTurnComplete(BattleController __instance)
         {
             foreach (GameObject orb in DeckManager.completeDeck)
             {
                 Attack attack = orb.GetComponent<Attack>();
                 if (attack != null)
                 {
-                    ModifiedOrb modifiedOrb = ModifiedOrb.GetOrb(attack.locNameString);
-                    if (modifiedOrb != null)
+                    List<ModifiedOrb> orbs = GetOrbs(attack.locNameString);
+                    foreach (ModifiedOrb modifiedOrb in orbs)
                     {
                         modifiedOrb.OnEnemyTurnEnd(__instance, orb, attack);
+
                     }
                 }
             }
         }
-    }
 
-    [HarmonyPatch(typeof(BattleController), nameof(BattleController.Start))]
-    public static class BattleStart
-    {
-        public static void Postfix(BattleController __instance)
+        [HarmonyPatch(typeof(BattleController), nameof(BattleController.Start))]
+        [HarmonyPostfix]
+        public static void PatchBattleStart(BattleController __instance)
         {
             if (DeckManager.completeDeck != null)
             {
@@ -356,15 +340,30 @@ namespace ProLib.Orbs
                     Attack attack = orb.GetComponent<Attack>();
                     if (attack != null)
                     {
-                        ModifiedOrb modifiedOrb = ModifiedOrb.GetOrb(attack.locNameString);
-                        if (modifiedOrb != null)
+                        List<ModifiedOrb> orbs = GetOrbs(attack.locNameString);
+                        foreach (ModifiedOrb modifiedOrb in orbs)
                         {
                             modifiedOrb.OnBattleStart(__instance, orb, attack);
                         }
                     }
                 }
             }
-
         }
+
+        [HarmonyPatch(typeof(BattleController), nameof(BattleController.DrawBall))]
+        [HarmonyPostfix]
+        public static void PatchDrawBall(BattleController __instance)
+        {
+            Attack attack = __instance._activePachinkoBall.GetComponent<Attack>();
+            if (attack != null)
+            {
+                List<ModifiedOrb> orbs = GetOrbs(attack.locNameString);
+                foreach (ModifiedOrb orb in orbs)
+                {
+                    orb.OnDrawnFromDeck(__instance, __instance._activePachinkoBall, attack);
+                }
+            }
+        }
+        #endregion
     }
 }

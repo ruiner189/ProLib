@@ -12,50 +12,138 @@ using UnityEngine.UI;
 using Battle.Attacks;
 using ProLib.Fixes;
 using Battle;
+using System.Collections;
+using System.Diagnostics;
 
 namespace ProLib.Relics
 {
-    public static class CustomRelicManager
+    public class CustomRelicManager : MonoBehaviour
     {
-        public static readonly Dictionary<CustomRelic, int> RelicCountdownValues = new Dictionary<CustomRelic, int>();
-        public static readonly Dictionary<CustomRelic, int> RelicRemainingCountdowns = new Dictionary<CustomRelic, int>();
-        public static readonly Dictionary<CustomRelic, int> RelicUsesPerBattleCounts = new Dictionary<CustomRelic, int>();
-        public static readonly Dictionary<CustomRelic, int> RelicRemainingUsesPerBattle = new Dictionary<CustomRelic, int>();
-        public static readonly Dictionary<CustomRelic, int> OrderOfRelicsObtained = new Dictionary<CustomRelic, int>();
+        public readonly Dictionary<CustomRelic, int> RelicCountdownValues = new Dictionary<CustomRelic, int>();
+        public readonly Dictionary<CustomRelic, int> RelicRemainingCountdowns = new Dictionary<CustomRelic, int>();
+        public readonly Dictionary<CustomRelic, int> RelicUsesPerBattleCounts = new Dictionary<CustomRelic, int>();
+        public readonly Dictionary<CustomRelic, int> RelicRemainingUsesPerBattle = new Dictionary<CustomRelic, int>();
+        public readonly Dictionary<CustomRelic, int> OrderOfRelicsObtained = new Dictionary<CustomRelic, int>();
 
-        public static readonly Dictionary<RelicRarity, List<CustomRelic>> AvailableRelicsOfRarity = new Dictionary<RelicRarity, List<CustomRelic>>();
+        public readonly Dictionary<RelicRarity, List<CustomRelic>> AvailableRelicsOfRarity = new Dictionary<RelicRarity, List<CustomRelic>>();
 
-        public static readonly Dictionary<CustomRelic, RelicIcon> RelicIcons = new Dictionary<CustomRelic, RelicIcon>();
-        public static readonly List<CustomRelic> OwnedRelics = new List<CustomRelic>();
-        public static readonly HashSet<String> UnlockedRelics = new HashSet<String>();
-        private static readonly List<IDamageModifier> _damageModifiers = new List<IDamageModifier>();
+        public readonly Dictionary<CustomRelic, RelicIcon> RelicIcons = new Dictionary<CustomRelic, RelicIcon>();
+        public readonly List<CustomRelic> OwnedRelics = new List<CustomRelic>();
+        public readonly HashSet<String> UnlockedRelics = new HashSet<String>();
+        private readonly List<IDamageModifier> _damageModifiers = new List<IDamageModifier>();
 
-        public static RelicManager RelicManager;
+        public RelicManager RelicManager;
+        public delegate void RelicRegister(CustomRelicManager manager);
 
-        public static void AddCountdown(CustomRelic relic, int value)
+        private bool _relicsRegistered;
+
+        public static CustomRelicManager Instance;
+        public static RelicRegister Register = delegate (CustomRelicManager manager) { };
+
+        public void Awake()
+        {
+            if (Instance == null) Instance = this;
+            if (this != Instance) Destroy(this);
+        }
+
+        public void Start()
+        {
+            StartCoroutine(DelayedStart());
+        }
+
+        public IEnumerator DelayedStart()
+        {
+            int attempts = 10;
+            while (RelicManager == null && attempts > 0)
+            {
+                yield return new WaitForEndOfFrame();
+                attempts--;
+                RelicManager = Resources.FindObjectsOfTypeAll<RelicManager>().FirstOrDefault();
+            }
+
+            if (RelicManager != null)
+            {
+                if (!_relicsRegistered)
+                {
+                    RegisterCustomRelics();
+                }
+                AddRelicsToPools();
+            }
+            else
+            {
+                Plugin.Log.LogWarning("Could not find Relic Manager. Aborting Relic Registration.");
+            }
+        }
+
+        private void RegisterCustomRelics()
+        {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            Register(this);
+            _relicsRegistered = true;
+
+            stopwatch.Stop();
+            Plugin.Log.LogInfo($"All Custom relics built! Took {stopwatch.ElapsedMilliseconds}ms");
+        }
+
+        private void AddRelicsToPools()
+        {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            List<CustomRelic> relics = CustomRelic.AllCustomRelics;
+
+            RelicSet[] pools = Resources.FindObjectsOfTypeAll<RelicSet>();
+            RelicSet globalRelics = null;
+
+            foreach (RelicSet pool in pools)
+            {
+                if (pool.name == "GlobalRelics") globalRelics = pool;
+            }
+
+            if (globalRelics != null)
+                foreach (CustomRelic relic in relics)
+                {
+                    if (relic.IsEnabled)
+                    {
+                        globalRelics.relics.Add(relic);
+                    }
+                }
+            else
+            {
+                Plugin.Log.LogError("Could not find the global relic pool. Relic Registration failed.");
+                return;
+            }
+
+            stopwatch.Stop();
+            Plugin.Log.LogInfo($"Custom relics injected into relic pool! Took {stopwatch.ElapsedMilliseconds}ms");
+        }
+
+        public void AddCountdown(CustomRelic relic, int value)
         {
             RelicCountdownValues[relic] = value;
         }
 
-        public static void AddUses(CustomRelic relic, int value)
+        public void AddUses(CustomRelic relic, int value)
         {
             RelicUsesPerBattleCounts[relic] = value;
         }
 
-        public static List<CustomRelic> GetAvailableRelicsOfRarity(RelicRarity rarity)
+        public List<CustomRelic> GetAvailableRelicsOfRarity(RelicRarity rarity)
         {
             if (!AvailableRelicsOfRarity.ContainsKey(rarity)) AvailableRelicsOfRarity[rarity] = new List<CustomRelic>();
             return AvailableRelicsOfRarity[rarity];
         }
 
-        public static void AddToAvailablePool(CustomRelic relic)
+        public void AddToAvailablePool(CustomRelic relic)
         {
             RelicRarity rarity = relic.globalRarity;
             if (!AvailableRelicsOfRarity.ContainsKey(rarity)) AvailableRelicsOfRarity[rarity] = new List<CustomRelic>();
             AvailableRelicsOfRarity[rarity].Add(relic);
         }
 
-        public static void RemoveFromAvailablityPools(CustomRelic relic)
+        public void RemoveFromAvailablityPools(CustomRelic relic)
         {
             foreach (List<CustomRelic> pool in AvailableRelicsOfRarity.Values)
             {
@@ -63,7 +151,7 @@ namespace ProLib.Relics
             }
         }
 
-        public static void SetupInternalRelicPools()
+        public void SetupInternalRelicPools()
         {
 
             AvailableRelicsOfRarity.Clear();
@@ -77,17 +165,17 @@ namespace ProLib.Relics
             }
         }
 
-        public static void AddDamageModifier(IDamageModifier modifier)
+        public void AddDamageModifier(IDamageModifier modifier)
         {
             _damageModifiers.Add(modifier);
         }
 
-        public static void RemoveDamageModifier(IDamageModifier modifier)
+        public void RemoveDamageModifier(IDamageModifier modifier)
         {
             _damageModifiers.Remove(modifier);
         }
 
-        public static void Reset()
+        public void Reset()
         {
             RelicManager = Resources.FindObjectsOfTypeAll<RelicManager>().FirstOrDefault();
             foreach (CustomRelic relic in OwnedRelics)
@@ -102,7 +190,7 @@ namespace ProLib.Relics
             RelicManager.OnRelicsReset?.Invoke(null);
         }
 
-        public static bool RelicActive(string id)
+        public bool RelicActive(string id)
         {
             if (CustomRelic.TryGetCustomRelic(id, out CustomRelic relic))
             {
@@ -111,12 +199,12 @@ namespace ProLib.Relics
             return false;
         }
 
-        public static bool RelicActive(CustomRelic relic)
+        public bool RelicActive(CustomRelic relic)
         {
             return OwnedRelics.Contains(relic);
         }
 
-        public static bool AttemptUseRelic(string id)
+        public bool AttemptUseRelic(string id)
         {
             if (CustomRelic.TryGetCustomRelic(id, out CustomRelic relic))
             {
@@ -125,7 +213,7 @@ namespace ProLib.Relics
             return false;
         }
 
-        public static bool AttemptUseRelic(CustomRelic relic)
+        public bool AttemptUseRelic(CustomRelic relic)
         {
             if (!OwnedRelics.Contains(relic))
             {
@@ -167,7 +255,7 @@ namespace ProLib.Relics
             }
         }
 
-        public static void RemoveRelic(CustomRelic relic)
+        public void RemoveRelic(CustomRelic relic)
         {
             if (OwnedRelics.Contains(relic))
             {
@@ -176,18 +264,27 @@ namespace ProLib.Relics
             }
         }
 
-        [Register]
-        public static void RegisterDelegates()
+        public void OnEnable()
         {
-            RelicManager.OnRelicAdded += new RelicManager.RelicManagement(OnRelicAddedHandler);
-            RelicManager.OnRelicRemoved += new RelicManager.RelicManagement(OnRelicRemovedHandler);
-            RelicManager.OnRelicUsed += new RelicManager.RelicManagement(OnRelicUsedHandler);
-            RelicManager.OnRelicEnabled += new RelicManager.RelicManagement(OnRelicEnabledHandler);
-            RelicManager.OnRelicDisabled += new RelicManager.RelicManagement(OnRelicDisabledHandler);
-            RelicManager.OnCountdownDecremented += new RelicManager.CountdownRelicEvent(OnCountdownDecrementedHandler);
+            RelicManager.OnRelicAdded += OnRelicAddedHandler;
+            RelicManager.OnRelicRemoved += OnRelicRemovedHandler;
+            RelicManager.OnRelicUsed += OnRelicUsedHandler;
+            RelicManager.OnRelicEnabled += OnRelicEnabledHandler;
+            RelicManager.OnRelicDisabled += OnRelicDisabledHandler;
+            RelicManager.OnCountdownDecremented += OnCountdownDecrementedHandler;
         }
 
-        private static void OnRelicAddedHandler(Relic relic)
+        public void OnDisable()
+        {
+            RelicManager.OnRelicAdded -= OnRelicAddedHandler;
+            RelicManager.OnRelicRemoved -= OnRelicRemovedHandler;
+            RelicManager.OnRelicUsed -= OnRelicUsedHandler;
+            RelicManager.OnRelicEnabled -= OnRelicEnabledHandler;
+            RelicManager.OnRelicDisabled -= OnRelicDisabledHandler;
+            RelicManager.OnCountdownDecremented -= OnCountdownDecrementedHandler;
+        }
+
+        private void OnRelicAddedHandler(Relic relic)
         {
             if (relic is CustomRelic customRelic)
             {
@@ -196,7 +293,7 @@ namespace ProLib.Relics
             }
         }
 
-        private static void OnRelicRemovedHandler(Relic relic)
+        private void OnRelicRemovedHandler(Relic relic)
         {
             if (relic is CustomRelic customRelic)
             {
@@ -205,7 +302,7 @@ namespace ProLib.Relics
             }
         }
 
-        private static void OnRelicUsedHandler(Relic relic)
+        private void OnRelicUsedHandler(Relic relic)
         {
             if (relic is CustomRelic customRelic)
             {
@@ -214,7 +311,7 @@ namespace ProLib.Relics
             }
         }
 
-        private static void OnRelicEnabledHandler(Relic relic)
+        private void OnRelicEnabledHandler(Relic relic)
         {
             if (relic is CustomRelic customRelic)
             {
@@ -223,7 +320,7 @@ namespace ProLib.Relics
             }
         }
 
-        private static void OnRelicDisabledHandler(Relic relic)
+        private void OnRelicDisabledHandler(Relic relic)
         {
             if (relic is CustomRelic customRelic)
             {
@@ -232,7 +329,7 @@ namespace ProLib.Relics
             }
         }
 
-        private static void OnCountdownDecrementedHandler(Relic relic, int remainingCountdown)
+        private void OnCountdownDecrementedHandler(Relic relic, int remainingCountdown)
         {
             if (relic is CustomRelic customRelic)
             {
@@ -244,14 +341,14 @@ namespace ProLib.Relics
         private static float GetDamageModifier(Attack attack, int critCount, float damage)
         {
             float start = damage;
-            foreach (CustomRelic relic in OwnedRelics)
+            foreach (CustomRelic relic in Instance.OwnedRelics)
             {
                 damage += relic.DamageModifier(attack, critCount);
             }
 
-            foreach (IDamageModifier modifier in _damageModifiers)
+            foreach (IDamageModifier modifier in Instance._damageModifiers)
             {
-                float additional = modifier.GetDamageModifier(attack, RelicManager, critCount, damage);
+                float additional = modifier.GetDamageModifier(attack, Instance.RelicManager, critCount, damage);
                 damage += additional;
             }
 
@@ -265,12 +362,12 @@ namespace ProLib.Relics
             {
                 var code = new List<CodeInstruction>(instructions);
                 int insertionIndex = 0;
-                // Checking where the first relicManager is null. We can use that as an anchor for where we insert our code, as it is nearby.
-                for (int i = 0; i < code.Count; i++)
+                // Checking where num1 and num2 are first set.
+                for (int i = 0; i < code.Count - 1; i++)
                 {
-                    if (code[i].opcode == OpCodes.Ldfld && code[i].operand == (object)AccessTools.Field(typeof(Attack), "_relicManager"))
+                    if (code[i].opcode == OpCodes.Ldc_R4 && code[i + 1].opcode == OpCodes.Stloc_2)
                     {
-                        insertionIndex = i + 4;
+                        insertionIndex = i + 2;
                         break;
                     }
                 }
@@ -301,7 +398,6 @@ namespace ProLib.Relics
 
                 code.InsertRange(insertionIndex, instructionsToInsert);
 
-
                 return code;
             }
         }
@@ -318,20 +414,20 @@ namespace ProLib.Relics
                         TrophyStack(__instance, customRelic);
                         return;
                     }
-                    UnlockedRelics.Add(customRelic.Id);
+                    Instance.UnlockedRelics.Add(customRelic.Id);
 
-                    if (!OwnedRelics.Contains(customRelic))
+                    if (!Instance.OwnedRelics.Contains(customRelic))
                     {
-                        if (RelicCountdownValues.ContainsKey(customRelic))
+                        if (Instance.RelicCountdownValues.ContainsKey(customRelic))
                         {
-                            RelicRemainingCountdowns[customRelic] = RelicCountdownValues[customRelic];
+                            Instance.RelicRemainingCountdowns[customRelic] = Instance.RelicCountdownValues[customRelic];
                         }
-                        if (RelicUsesPerBattleCounts.ContainsKey(customRelic))
+                        if (Instance.RelicUsesPerBattleCounts.ContainsKey(customRelic))
                         {
-                            RelicRemainingUsesPerBattle[customRelic] = RelicUsesPerBattleCounts[customRelic];
+                            Instance.RelicRemainingUsesPerBattle[customRelic] = Instance.RelicUsesPerBattleCounts[customRelic];
                         }
-                        OwnedRelics.Add(customRelic);
-                        OrderOfRelicsObtained.Add(customRelic, __instance._orderCounter);
+                        Instance.OwnedRelics.Add(customRelic);
+                        Instance.OrderOfRelicsObtained.Add(customRelic, __instance._orderCounter);
                         __instance._orderCounter++;
 
                         __instance._availableCommonRelics.Remove(relic);
@@ -343,13 +439,13 @@ namespace ProLib.Relics
 
             private static void TrophyStack(RelicManager relicManager, CustomRelic trophy)
             {
-                int stack = RelicRemainingCountdowns.ContainsKey(trophy) ? RelicRemainingCountdowns[trophy] + 1 : 1;
-                RelicRemainingCountdowns[trophy] = stack;
+                int stack = Instance.RelicRemainingCountdowns.ContainsKey(trophy) ? Instance.RelicRemainingCountdowns[trophy] + 1 : 1;
+                Instance.RelicRemainingCountdowns[trophy] = stack;
 
                 if (stack == 1)
                 {
-                    OwnedRelics.Add(trophy);
-                    OrderOfRelicsObtained.Add(trophy, relicManager._orderCounter);
+                    Instance.OwnedRelics.Add(trophy);
+                    Instance.OrderOfRelicsObtained.Add(trophy, relicManager._orderCounter);
                     relicManager._orderCounter++;
                     RelicManager.OnRelicAdded(trophy);
                 }
@@ -363,10 +459,10 @@ namespace ProLib.Relics
         {
             private static void Postfix()
             {
-                foreach (KeyValuePair<CustomRelic, int> key in RelicUsesPerBattleCounts)
+                foreach (KeyValuePair<CustomRelic, int> key in Instance.RelicUsesPerBattleCounts)
                 {
-                    RelicRemainingUsesPerBattle[key.Key] = key.Value;
-                    if (OwnedRelics.Contains(key.Key))
+                    Instance.RelicRemainingUsesPerBattle[key.Key] = key.Value;
+                    if (Instance.OwnedRelics.Contains(key.Key))
                     {
                         RelicManager.OnRelicEnabled?.Invoke(key.Key);
                     }
@@ -379,7 +475,7 @@ namespace ProLib.Relics
         {
             private static void Prefix(RelicManager __instance)
             {
-                Reset();
+                Instance.Reset();
             }
         }
 
@@ -389,7 +485,7 @@ namespace ProLib.Relics
             [HarmonyPriority(Priority.Low)]
             private static void Prefix(BattleController __instance)
             {
-                foreach (CustomRelic relic in OwnedRelics)
+                foreach (CustomRelic relic in Instance.OwnedRelics)
                 {
                     relic.OnArmBallForShot(__instance);
                 }
@@ -401,7 +497,7 @@ namespace ProLib.Relics
         {
             private static void Prefix(TargetingManager __instance)
             {
-                List<CustomRelic> relics = new List<CustomRelic>(OwnedRelics); // We are doing this just in case the list is modified while iterating through
+                List<CustomRelic> relics = new List<CustomRelic>(Instance.OwnedRelics); // We are doing this just in case the list is modified while iterating through
 
                 relics.ForEach(relic => relic.HandlePegHit(__instance._relicManager));
             }
@@ -414,12 +510,12 @@ namespace ProLib.Relics
             {
                 if (toRemove is CustomRelic customRelic)
                 {
-                    RelicIcon relicIcon = RelicIcons[customRelic];
+                    RelicIcon relicIcon = Instance.RelicIcons[customRelic];
                     if (relicIcon != null)
                     {
                         relicIcon.Remove();
                     }
-                    RelicIcons.Remove(customRelic);
+                    Instance.RelicIcons.Remove(customRelic);
                     return false;
                 }
 
@@ -433,12 +529,12 @@ namespace ProLib.Relics
         {
             public static void Prefix()
             {
-                foreach (RelicIcon relicIcon in RelicIcons.Values)
+                foreach (RelicIcon relicIcon in Instance.RelicIcons.Values)
                 {
                     if (relicIcon != null)
                         UnityEngine.Object.Destroy(relicIcon.gameObject);
                 }
-                RelicIcons.Clear();
+                Instance.RelicIcons.Clear();
             }
         }
 
@@ -467,7 +563,7 @@ namespace ProLib.Relics
                     }
 
                     component.SetRelic(toAdd);
-                    RelicIcons[customRelic] = component;
+                    Instance.RelicIcons[customRelic] = component;
                     gameObject.transform.SetParent(__instance.gameObject.transform, false);
                     gameObject.GetComponent<Image>().DOFade(1f, 0.5f).From(0f, true, false);
                     return false;
@@ -484,12 +580,12 @@ namespace ProLib.Relics
             {
                 if (relic is CustomRelic customRelic)
                 {
-                    if (RelicIcons.ContainsKey(customRelic))
+                    if (Instance.RelicIcons.ContainsKey(customRelic))
                     {
-                        RelicIcons[customRelic].Flash();
-                        if (RelicCountdownValues.ContainsKey(customRelic))
+                        Instance.RelicIcons[customRelic].Flash();
+                        if (Instance.RelicCountdownValues.ContainsKey(customRelic))
                         {
-                            RelicIcons[customRelic].ResetCountdownText();
+                            Instance.RelicIcons[customRelic].ResetCountdownText();
                         }
                     }
                     if (relic.useSfx != null)
@@ -509,9 +605,9 @@ namespace ProLib.Relics
             {
                 if (relic is CustomRelic customRelic)
                 {
-                    if (RelicIcons.ContainsKey(customRelic) && RelicIcons[customRelic].grayScaleActive)
+                    if (Instance.RelicIcons.ContainsKey(customRelic) && Instance.RelicIcons[customRelic].grayScaleActive)
                     {
-                        RelicIcons[customRelic].RemoveGrayscale();
+                        Instance.RelicIcons[customRelic].RemoveGrayscale();
                     }
                     return false;
                 }
@@ -526,9 +622,9 @@ namespace ProLib.Relics
             {
                 if (relic is CustomRelic customRelic)
                 {
-                    if (RelicIcons.ContainsKey(customRelic) && !RelicIcons[customRelic].grayScaleActive)
+                    if (Instance.RelicIcons.ContainsKey(customRelic) && !Instance.RelicIcons[customRelic].grayScaleActive)
                     {
-                        RelicIcons[customRelic].ApplyGrayscale();
+                        Instance.RelicIcons[customRelic].ApplyGrayscale();
                     }
                     return false;
                 }
@@ -543,7 +639,7 @@ namespace ProLib.Relics
             {
                 if (relic is CustomRelic customRelic)
                 {
-                    RelicIcons[customRelic].SetCountdownText(countdown.ToString());
+                    Instance.RelicIcons[customRelic].SetCountdownText(countdown.ToString());
                     return false;
                 }
                 return true;
@@ -563,9 +659,9 @@ namespace ProLib.Relics
                     {
                         return false;
                     }
-                    if (RelicCountdownValues.ContainsKey(customRelic))
+                    if (Instance.RelicCountdownValues.ContainsKey(customRelic))
                     {
-                        __instance.SetCountdownText(RelicCountdownValues[customRelic].ToString());
+                        __instance.SetCountdownText(Instance.RelicCountdownValues[customRelic].ToString());
                         return false;
                     }
                     __instance._countdownText.enabled = false;
@@ -582,7 +678,7 @@ namespace ProLib.Relics
             {
                 if (__instance.relic is CustomRelic customRelic)
                 {
-                    __instance.SetCountdownText(RelicCountdownValues[customRelic].ToString());
+                    __instance.SetCountdownText(Instance.RelicCountdownValues[customRelic].ToString());
                     return false;
                 }
                 return true;
@@ -594,20 +690,20 @@ namespace ProLib.Relics
         {
             private static void Prefix(RelicManager __instance)
             {
-                if (OwnedRelics == null)
+                if (Instance.OwnedRelics == null)
                 {
                     return;
                 }
                 List<CustomRelicManagerSaveData.CustomRelicSaveObject> list = new List<CustomRelicManagerSaveData.CustomRelicSaveObject>();
-                foreach (CustomRelic relic in OwnedRelics)
+                foreach (CustomRelic relic in Instance.OwnedRelics)
                 {
-                    CustomRelicManagerSaveData.CustomRelicSaveObject item = new CustomRelicManagerSaveData.CustomRelicSaveObject(relic.Id, OrderOfRelicsObtained[relic]);
+                    CustomRelicManagerSaveData.CustomRelicSaveObject item = new CustomRelicManagerSaveData.CustomRelicSaveObject(relic.Id, Instance.OrderOfRelicsObtained[relic]);
                     list.Add(item);
                 }
                 List<CustomRelicManagerSaveData.CustomRelicCountdownStatus> list2 = CreateRelicCountdownsForSave();
-                CustomRelicManagerSaveData.CustomRelicPoolSaveObject relicPoolSaveObject = GetRelicPoolSaveObject(GetAvailableRelicsOfRarity(RelicRarity.COMMON));
-                CustomRelicManagerSaveData.CustomRelicPoolSaveObject relicPoolSaveObject2 = GetRelicPoolSaveObject(GetAvailableRelicsOfRarity(RelicRarity.RARE));
-                CustomRelicManagerSaveData.CustomRelicPoolSaveObject relicPoolSaveObject3 = GetRelicPoolSaveObject(GetAvailableRelicsOfRarity(RelicRarity.BOSS));
+                CustomRelicManagerSaveData.CustomRelicPoolSaveObject relicPoolSaveObject = GetRelicPoolSaveObject(Instance.GetAvailableRelicsOfRarity(RelicRarity.COMMON));
+                CustomRelicManagerSaveData.CustomRelicPoolSaveObject relicPoolSaveObject2 = GetRelicPoolSaveObject(Instance.GetAvailableRelicsOfRarity(RelicRarity.RARE));
+                CustomRelicManagerSaveData.CustomRelicPoolSaveObject relicPoolSaveObject3 = GetRelicPoolSaveObject(Instance.GetAvailableRelicsOfRarity(RelicRarity.BOSS));
                 new CustomRelicManagerSaveData(list.ToArray(), list2.ToArray(), relicPoolSaveObject, relicPoolSaveObject2, relicPoolSaveObject3).Save();
 
             }
@@ -615,7 +711,7 @@ namespace ProLib.Relics
             private static List<CustomRelicManagerSaveData.CustomRelicCountdownStatus> CreateRelicCountdownsForSave()
             {
                 List<CustomRelicManagerSaveData.CustomRelicCountdownStatus> list = new List<CustomRelicManagerSaveData.CustomRelicCountdownStatus>();
-                foreach (KeyValuePair<CustomRelic, int> pair in RelicRemainingCountdowns)
+                foreach (KeyValuePair<CustomRelic, int> pair in Instance.RelicRemainingCountdowns)
                 {
                     CustomRelicManagerSaveData.CustomRelicCountdownStatus item = new CustomRelicManagerSaveData.CustomRelicCountdownStatus(pair.Key.Id, pair.Value);
                     list.Add(item);
@@ -749,15 +845,15 @@ namespace ProLib.Relics
                 relicManager.Reset();
             }
 
-            if (OwnedRelics == null)
+            if (Instance.OwnedRelics == null)
             {
-                Reset();
+                Instance.Reset();
             }
 
             if (relic is CustomRelic customRelic)
             {
-                OwnedRelics.Add(customRelic);
-                OrderOfRelicsObtained.Add(customRelic, relicManager._orderCounter);
+                Instance.OwnedRelics.Add(customRelic);
+                Instance.OrderOfRelicsObtained.Add(customRelic, relicManager._orderCounter);
             }
             else if (relic.effect != RelicEffect.NONE)
             {
@@ -779,12 +875,12 @@ namespace ProLib.Relics
             {
                 if (CustomRelic.TryGetCustomRelic(relicCountdownStatus.RelicId, out CustomRelic relic))
                 {
-                    if (RelicCountdownValues.ContainsKey(relic))
+                    if (Instance.RelicCountdownValues.ContainsKey(relic))
                     {
-                        RelicRemainingCountdowns[relic] = RelicCountdownValues[relic];
+                        Instance.RelicRemainingCountdowns[relic] = Instance.RelicCountdownValues[relic];
                     }
-                    RelicRemainingCountdowns[relic] = relicCountdownStatus.RelicCountdown;
-                    if (OwnedRelics.Contains(relic))
+                    Instance.RelicRemainingCountdowns[relic] = relicCountdownStatus.RelicCountdown;
+                    if (Instance.OwnedRelics.Contains(relic))
                     {
                         RelicManager.OnCountdownDecremented?.Invoke(relic, relicCountdownStatus.RelicCountdown);
                     }

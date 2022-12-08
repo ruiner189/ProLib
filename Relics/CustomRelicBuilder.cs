@@ -114,10 +114,10 @@ namespace ProLib.Relics
             relic.AlwaysUnlocked = _alwaysUnlocked;
 
             if (_countdown > 0)
-                CustomRelicManager.AddCountdown(relic, _countdown);
+                CustomRelicManager.Instance.AddCountdown(relic, _countdown);
 
             if (_uses > 0)
-                CustomRelicManager.AddUses(relic, _uses);
+                CustomRelicManager.Instance.AddUses(relic, _uses);
 
             Plugin.Log.LogDebug($"{relic.locKey} successfully registered.");
             return relic;

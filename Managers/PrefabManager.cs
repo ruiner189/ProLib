@@ -18,16 +18,16 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Worldmap;
 
-namespace ProLib.Loaders
+namespace ProLib.Managers
 {
 
-    public class PrefabLoader : MonoBehaviour
+    public class PrefabManager : MonoBehaviour
     {
         /* A temporary boolean to deactivate this feature. We don't want to add a 15 second loading screen if we're not using it*/
         public static readonly bool IsActive = false;
 
         private bool _complete = false;
-        public static PrefabLoader Instance;
+        public static PrefabManager Instance;
 
         private Dictionary<String, GameObject> ScenarioPrefabs = new Dictionary<string, GameObject>();
         private Dictionary<String, GameObject> BattlePrefabs = new Dictionary<string, GameObject>();
@@ -59,13 +59,12 @@ namespace ProLib.Loaders
 
             if (IsActive)
                 CreateLoadingScreen();
-
         }
 
         public void Start()
         {
             if (IsActive)
-                Instance.StartCoroutine(Instance.GrabPrefabs(SceneLoader.ForestMap, SceneLoader.CastleMap, SceneLoader.MinesMap));
+                Instance.StartCoroutine(Instance.GrabPrefabs(SceneInfoManager.ForestMap, SceneInfoManager.CastleMap, SceneInfoManager.MinesMap));
         }
 
         public void CreateLoadingScreen()
@@ -83,7 +82,7 @@ namespace ProLib.Loaders
 
             foreach (String scene in scenes)
             {
-                var task = SceneManager.LoadSceneAsync(scene, LoadSceneMode.Single);
+                var task = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(scene, LoadSceneMode.Single);
                 while (!task.isDone || MapController.instance == null)
                 {
                     yield return null;
@@ -100,7 +99,7 @@ namespace ProLib.Loaders
 
             _complete = true;
 
-            var task2 = SceneManager.LoadSceneAsync(SceneLoader.MainMenu, LoadSceneMode.Single);
+            var task2 = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(SceneInfoManager.MainMenu, LoadSceneMode.Single);
             while (!task2.isDone)
             {
                 yield return null;

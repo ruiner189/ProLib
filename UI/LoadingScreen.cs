@@ -19,6 +19,9 @@ namespace ProLib.UI
         private Sprite BackgroundSprite;
         private TextMeshProUGUI Text;
 
+        private float currentTime = Time.time;
+        private int dots = 0;
+
         public void Awake()
         {
             this.BackgroundSprite = Assembly.GetExecutingAssembly().LoadSprite("Resources.background.png");
@@ -52,13 +55,9 @@ namespace ProLib.UI
             TextObj.transform.localScale = new Vector3(1, 1, 1);
             TextObj.transform.localPosition = new Vector2(-100, -115);
 
-
             gameObject.HideAndDontSave();
-
         }
 
-        private float currentTime = Time.time;
-        private int dots = 0;
         public void Update()
         {
             float duration = Time.time - currentTime;
